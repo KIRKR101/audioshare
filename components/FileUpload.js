@@ -1,4 +1,3 @@
-// components/FileUpload.js
 "use client";
 
 import { useState, useRef } from "react";
@@ -47,6 +46,7 @@ export default function FileUpload() {
       if (!res.ok) throw new Error("Upload failed");
 
       const data = await res.json();
+      // Revert to the original shareable link format (without extension)
       setShareableLink(`${window.location.origin}/audio/${data.fileId}`);
       setUploadSuccess(true); // Set upload success to true
       toast.success("Upload successful!");
@@ -110,13 +110,13 @@ export default function FileUpload() {
         )}
 
         {shareableLink && (
-          <div className="mt-4 p-4 rounded-md bg-green-100 dark:bg-green-900 border border-green-200 dark:border-green-700">
+          <div className="mt-4 p-4">
             {uploadSuccess && (
-              <div className="text-green-700 dark:text-green-400 font-semibold mb-2">
+              <div className="mb-2">
                 File uploaded successfully!
               </div>
             )}
-            <p className="text-sm dark:text-gray-400">
+            <p className="text-sm">
               Shareable link:{" "}
               <a
                 href={shareableLink}

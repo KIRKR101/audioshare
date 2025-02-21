@@ -1,23 +1,16 @@
-// pages/api/audio/metadata/[id].js
-import { MongoClient, ObjectId } from 'mongodb';
+import fs from 'fs';
+import path from 'path';
 
 export default async function handler(req, res) {
   const { id } = req.query;
-  const client = await MongoClient.connect(process.env.MONGODB_URI);
-  const db = client.db();
+  const audioFileDir = path.join(process.cwd(), 'public', 'audio');
+  const metadataFilePath = path.join(audioFileDir, `${id}.metadata.json`);
 
-  const files = await db
-    .collection('audio.files')
-    .find({ _id: new ObjectId(id) })
-    .toArray();
-
-  if (!files || files.length === 0) {
-    res.status(404).json({ error: 'File not found' });
-    client.close();
-    return;
+  try {
+    const metadataContent = fs.readFileSync(metadataFilePath, 'utf-8');
+    const metadata = JSON.parse(metadataContent);
+    res.status(200).json(metadata);
+  } catch (error) {
+    res.status(404).json({ error: 'File metadata not found' });
   }
-
-  const file = files[0];
-  res.status(200).json(file.metadata || {});
-  client.close();
 }
