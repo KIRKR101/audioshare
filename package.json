@@ -21,6 +21,7 @@
     "clsx": "^2.1.1",
     "dialog": "^0.3.1",
     "gridfs-stream": "^1.1.1",
+    "js-cookie": "^3.0.5",
     "lucide-react": "^0.474.0",
     "mongodb": "^6.13.0",
     "multer": "^1.4.5-lts.1",

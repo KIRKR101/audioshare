@@ -91,7 +91,7 @@ export default async function handler(req, res) {
         tempFilePath = req.file.path;
         logger.info(`File received: ${req.file.originalname} (${req.file.size} bytes)`);
 
-        const result = await processAudioFile(req.file);
+        const result = await processAudioFile(req, res);  // Pass req and res
 
         const endTime = process.hrtime(startTime);
         const processingTime = (endTime[0] * 1000 + endTime[1] / 1000000).toFixed(2);
@@ -122,10 +122,10 @@ export default async function handler(req, res) {
     }
 }
 
-async function processAudioFile(file) {
+async function processAudioFile(req, res) { // Receive req and res
     let metadata;
-    const tempFilePath = file.path;
-    const fileExt = path.extname(file.originalname).toLowerCase();
+    const tempFilePath = req.file.path;
+    const fileExt = path.extname(req.file.originalname).toLowerCase();
 
     try {
         if (['.flac', '.ogg', '.wav', '.aiff', '.m4a'].includes(fileExt)) {
@@ -139,7 +139,7 @@ async function processAudioFile(file) {
             logger.debug(`Using parseBuffer for ${fileExt} file`);
             const fileBuffer = await fs.readFile(tempFilePath);
             metadata = await parseBuffer(fileBuffer, {
-                mimeType: file.mimetype,
+                mimeType: req.file.mimetype,
                 skipCovers: false,
                 skipPostHeaders: false,
                 duration: true
@@ -148,7 +148,7 @@ async function processAudioFile(file) {
 
         const fileId = crypto.randomBytes(16).toString('hex');
         const albumArtPath = await processAlbumArt(metadata, fileId);
-        const storedFilePath = await storeAudioFile(tempFilePath, fileId, file.originalname);
+        const storedFilePath = await storeAudioFile(tempFilePath, fileId, req.file.originalname);
         const commonMetadataWithoutPicture = { ...metadata.common }; // Create a shallow copy
         delete commonMetadataWithoutPicture.picture; // Remove the picture property from the copy
 
@@ -157,10 +157,10 @@ async function processAudioFile(file) {
 
         const fileMetadata = {
             fileId,
-            originalName: file.originalname,
+            originalName: req.file.originalname,
             fileExtension: fileExt.slice(1),
-            mimetype: file.mimetype,
-            size: file.size,
+            mimetype: req.file.mimetype,
+            size: req.file.size,
             albumArt: albumArtPath,
             publicPath: storedFilePath,
             format: metadata.format,
@@ -170,6 +170,15 @@ async function processAudioFile(file) {
         };
 
         await storeMetadata(fileId, fileMetadata);
+
+        // --- Construct the base URL dynamically ---
+        const protocol = req.headers['x-forwarded-proto'] || 'http';  // Determine protocol
+        const host = req.headers['host'];
+        const baseUrl = `${protocol}://${host}`;
+
+        // --- Use the constructed base URL ---
+        await appendToAudioList(fileMetadata.originalName, `${baseUrl}${fileMetadata.publicPath}`, fileMetadata);
+
         return fileMetadata;
 
     } finally {
@@ -287,4 +296,19 @@ async function storeMetadata(fileId, metadata) {
     const metadataFilePath = path.join(audioFileDir, `${fileId}.metadata.json`);
     await fs.writeFile(metadataFilePath, JSON.stringify(metadata, null, 2));
     return metadataFilePath;
+}
+
+async function appendToAudioList(originalName, publicPath, metadata) {
+    const listFilePath = path.join(process.cwd(), 'public', 'audio_files.txt');
+
+    // Extract artist and title from metadata.  Handle cases where they might be missing.
+    const artist = metadata?.common?.artist || 'Unknown Artist';
+    const title = metadata?.common?.title || originalName.replace(/\.[^/.]+$/, ""); // Use filename if no title, remove extension
+
+    const entry = `${artist} - ${title} - ${originalName} | ${publicPath}\n`;
+    try {
+        await fs.appendFile(listFilePath, entry, 'utf8');
+    } catch (error) {
+        logger.error('Failed to append to audio list', error);
+    }
 }

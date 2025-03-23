@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Moon, Sun, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -7,13 +7,38 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import Cookies from 'js-cookie';
 
 const Navbar = () => {
-  const [theme, setTheme] = React.useState('light');
+  const [theme, setTheme] = useState('light'); // Initialize with a default
+
+  // Load the theme from cookies on component mount (client-side)
+  useEffect(() => {
+    const savedTheme = Cookies.get('theme');
+    if (savedTheme) {
+      setTheme(savedTheme);
+      // Apply the theme immediately
+      if (savedTheme === 'dark') {
+        document.documentElement.classList.add('dark');
+      }
+    } else {
+      // If no saved theme, check for system preference
+      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      if (prefersDark) {
+        setTheme('dark');
+        document.documentElement.classList.add('dark');
+      }
+    }
+  }, []); // Empty dependency array ensures this runs only once on mount
+
 
   const toggleTheme = () => {
     const newTheme = theme === 'light' ? 'dark' : 'light';
-    setTheme(newTheme);
+    setTheme(newTheme);  // Update the state
+
+    // Update the cookie
+    Cookies.set('theme', newTheme, { expires: 365 });  // Set cookie, expires in 365 days
+
     document.documentElement.classList.toggle('dark');
   };
 
@@ -24,15 +49,17 @@ const Navbar = () => {
           {/* Left side - Logo and nav links */}
           <div className="flex items-center">
             <div className="flex-shrink-0">
-              <span className="text-black dark:text-gray-200 dark:hover:text-white text-xl font-bold">AudioShare</span>
+              <a href="/">
+                <span className="text-black dark:text-gray-200 dark:hover:text-white text-xl font-bold">AudioShare</span>
+              </a>
             </div>
             <div className="hidden md:block ml-10">
               <div className="flex items-center space-x-4">
                 <a href="/" className="text-black dark:text-gray-200 dark:hover:text-white px-3 py-2 rounded-md text-sm font-medium">
                   Upload
                 </a>
-                <a href="/faq" className="text-black dark:text-gray-200 dark:hover:text-white px-3 py-2 rounded-md text-sm font-medium">
-                  FAQ
+                <a href="/audio_files.txt" className="text-black dark:text-gray-200 dark:hover:text-white px-3 py-2 rounded-md text-sm font-medium">
+                  Index
                 </a>
               </div>
             </div>
