@@ -3,7 +3,7 @@ import { useRouter } from "next/router";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
-import { Play, Pause, Volume2, VolumeX, Download, MoreVertical } from 'lucide-react';
+import { Play, Pause, Volume2, VolumeX, Download, MoreVertical, X } from 'lucide-react';
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -18,8 +18,15 @@ import React from 'react';
 
 // Helper function for getting metadata value or "Unknown"
 const getMetadataValue = (value, unknownText = 'Unknown') => {
-    return value || unknownText;
+    if (value == null || value === undefined || value === "") { // Handle null, undefined, and empty string
+        return unknownText;
+    }
+    if (Array.isArray(value)) {
+        return value.length > 0 ? value.join(', ') : unknownText; // Handle empty arrays
+    }
+    return String(value); // Ensure value is converted to String for display
 };
+
 
 // Reusable MetadataRow Component (within the same file)
 function MetadataRow({ category, property, value, isCategoryRow = false }) {
@@ -144,7 +151,6 @@ export default function AudioPage({ fileMetadata, fileId, fileName }) {
         }
     };
 
-
     const handleVolumeChange = (value) => {
         if (audioRef.current) {
             audioRef.current.volume = value[0];
@@ -164,6 +170,17 @@ export default function AudioPage({ fileMetadata, fileId, fileName }) {
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
+    };
+
+    const downloadMetadata = () => {
+        const metadataJson = JSON.stringify(fileMetadata, null, 2);
+        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(metadataJson);
+        const downloadAnchorNode = document.createElement('a');
+        downloadAnchorNode.setAttribute("href", dataStr);
+        downloadAnchorNode.setAttribute("download", `${fileName.replace(/\.[^/.]+$/, "") || 'audio_metadata'}.json`); // Remove extension from fileName for metadata file
+        document.body.appendChild(downloadAnchorNode); // Required for Firefox
+        downloadAnchorNode.click();
+        downloadAnchorNode.remove();
     };
 
     const openMetadataDialog = () => {
@@ -288,41 +305,38 @@ export default function AudioPage({ fileMetadata, fileId, fileName }) {
             {showMetadataDialogOpen && (
                 <div className="fixed inset-0 z-50 overflow-y-auto" aria-modal="true" role="dialog">
                     {/* Background Overlay */}
-                    <div className="fixed inset-0 bg-black/50 dark:bg-neutral-900/80 backdrop-blur-sm transition-opacity" onClick={closeMetadataDialog} aria-hidden="true"></div>
+                    <div className="fixed inset-0 bg-black/50 dark:bg-neutral-900/80 backdrop-blur-[2px] transition-opacity" onClick={closeMetadataDialog} aria-hidden="true"></div>
 
                     {/* Dialog Container - centered */}
                     <div className="relative flex items-center justify-center min-h-screen p-4">
                         {/* Dialog Panel */}
                         <div className="relative bg-white dark:bg-neutral-900 rounded-lg shadow-xl overflow-hidden max-w-[90%] md:max-w-[80%] lg:max-w-[70%] xl:max-w-[60%] w-full border dark:border-neutral-700">
-                            <div className="px-6 py-6">
-                                <div className="text-lg font-medium text-gray-900 dark:text-white">Detailed Metadata</div>
+                            <div className="px-6 py-6 flex justify-between items-center"> {/* Modified header div */}
+                                <div className="text-lg font-medium text-gray-900 dark:text-white">Metadata</div>
+                                    <Button variant="secondary" onClick={closeMetadataDialog}>Close
+                                        <X className="h-4 w-4" />
+                                    </Button>
                             </div>
-                            <ScrollArea className="h-[70vh] w-full rounded-md pr-4">
+                            <ScrollArea className="h-[70vh] w-full rounded-md px-4">
                                 <div className="pb-4">
                                     <div className="overflow-x-auto">
                                         <table className="min-w-full text-xs md:text-sm">
-                                            <thead className="bg-gray-50 dark:bg-neutral-800">
-                                                <tr>
-                                                    <th className="py-2 px-3 text-left font-semibold text-gray-500 dark:text-neutral-400">Category</th>
-                                                    <th className="py-2 px-3 text-left font-semibold text-gray-500 dark:text-neutral-400">Property</th>
-                                                    <th className="py-2 px-3 text-left font-semibold text-gray-500 dark:text-neutral-400">Value</th>
-                                                </tr>
-                                            </thead>
                                             <tbody>
                                                 {/* === Basic Information === */}
                                                 <MetadataRow category="Basic" isCategoryRow />
+                                                {fileMetadata.common?.title && <MetadataRow category="" property="Filename" value={fileMetadata.originalName} />}
                                                 {fileMetadata.common?.title && <MetadataRow category="" property="Title" value={fileMetadata.common.title} />}
                                                 {fileMetadata.common?.artist && <MetadataRow category="" property="Artist" value={fileMetadata.common.artist} />}
                                                 {fileMetadata.common?.album && <MetadataRow category="" property="Album" value={fileMetadata.common.album} />}
                                                 {fileMetadata.common?.year && <MetadataRow category="" property="Year" value={fileMetadata.common.year} />}
-                                                {fileMetadata.common?.genre && <MetadataRow category="" property="Genre" value={fileMetadata.common.genre?.join(', ')} />}
-                                                {fileMetadata.common?.comment && <MetadataRow category="" property="Comment" value={fileMetadata.common.comment?.join(', ')} />}
+                                                {fileMetadata.common?.genre && <MetadataRow category="" property="Genre" value={fileMetadata.common.genre} />}
+                                                {fileMetadata.common?.comment && <MetadataRow category="" property="Comment" value={fileMetadata.common.comment} />}
                                                 {fileMetadata.common?.disk?.no && <MetadataRow category="" property="Disc" value={fileMetadata.common.disk.no} />}
                                                 {fileMetadata.common?.disk?.total && <MetadataRow category="" property="Total Discs" value={fileMetadata.common.disk.total} />}
                                                 {fileMetadata.common?.track?.no && <MetadataRow category="" property="Track Number" value={fileMetadata.common.track.no} />}
                                                 {fileMetadata.common?.track?.total && <MetadataRow category="" property="Total Tracks" value={fileMetadata.common.track.total} />}
-                                                {fileMetadata.common?.composer && <MetadataRow category="" property="Composer" value={fileMetadata.common.composer?.join(', ')} />}
-                                                {fileMetadata.common?.lyrics && <MetadataRow category="" property="Lyrics" value={fileMetadata.common.lyrics?.join(', ')} />}
+                                                {fileMetadata.common?.composer && <MetadataRow category="" property="Composer" value={fileMetadata.common.composer} />}
+                                                {fileMetadata.common?.lyrics && <MetadataRow category="" property="Lyrics" value={fileMetadata.common.lyrics} />}
                                                 {fileMetadata.common?.encoder && <MetadataRow category="" property="Encoder" value={fileMetadata.common.encoder} />}
                                                 {fileMetadata.format?.container && <MetadataRow category="" property="Container Format" value={fileMetadata.format.container} />}
                                                 {fileMetadata.format?.codec && <MetadataRow category="" property="Codec" value={fileMetadata.format.codec} />}
@@ -341,13 +355,33 @@ export default function AudioPage({ fileMetadata, fileId, fileName }) {
                                                 {fileMetadata.format?.encoding && <MetadataRow category="" property="Encoding" value={fileMetadata.format.encoding} />}
                                                 {fileMetadata.format?.sampleRateRatio && <MetadataRow category="" property="Sample Rate Ratio" value={fileMetadata.format.sampleRateRatio} />}
 
+
+                                                {/* === Native Metadata === */}
+                                                <MetadataRow category="Native" isCategoryRow />
+                                                {fileMetadata.native && Object.keys(fileMetadata.native).map((formatKey) => (
+                                                    <React.Fragment key={formatKey}>
+                                                        {fileMetadata.native[formatKey].map((tag, index) => (
+                                                            <MetadataRow
+                                                                key={`${formatKey}-${index}`}
+                                                                category=""
+                                                                property={tag.id || tag.name || `Tag ${index + 1}`} // Use tag.id for ID3, tag.name for Vorbis, fallback to index
+                                                                value={tag.value}
+                                                            />
+                                                        ))}
+                                                    </React.Fragment>
+                                                ))}
+
+
                                             </tbody>
                                         </table>
                                     </div>
                                 </div>
                             </ScrollArea>
                             <div className="px-6 py-4 bg-gray-50 dark:bg-neutral-800 border-t dark:border-neutral-700 flex justify-end">
-                                <Button variant="secondary" onClick={closeMetadataDialog}>Close</Button>
+                                <Button variant="secondary" onClick={downloadMetadata} className="space-x-2">
+                                    <Download className="h-4 w-4" />
+                                    <span>Download Metadata</span>
+                                </Button>
                             </div>
                         </div>
                     </div>
