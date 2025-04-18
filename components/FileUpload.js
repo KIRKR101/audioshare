@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
-import { X, Copy, Check } from "lucide-react"; // Import Check icon
+import { X, Copy, Check } from "lucide-react"; 
 
 export default function FileUpload() {
   const [file, setFile] = useState(null);
@@ -16,7 +16,7 @@ export default function FileUpload() {
   const fileInputRef = useRef(null);
   const [uploadSuccess, setUploadSuccess] = useState(false);
   const progressRef = useRef(null);
-  const [isCopying, setIsCopying] = useState(false); // State for copy animation
+  const [isCopying, setIsCopying] = useState(false);
 
   const handleFileChange = (e) => {
     const selectedFile = e.target.files[0];
@@ -115,35 +115,66 @@ export default function FileUpload() {
         </h2>
 
         {file ? (
-          <div className="mb-4 p-4 border rounded-md light:border-gray-200 flex items-center justify-between">
-            <span className="truncate dark:text-white">{file.name}</span>
+          <div className="mb-4">
+            <div className="p-4 border rounded-md light:border-gray-200 flex items-center justify-between">
+              <span className="truncate dark:text-white">{file.name}</span>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={handleDeselectFile}
+                className="hover:bg-gray-200 dark:hover:bg-neutral-900"
+              >
+                <X className="h-4 w-4" />
+                <span className="sr-only">Deselect file</span>
+              </Button>
+            </div>
+
             <Button
-              variant="ghost"
-              size="icon"
-              onClick={handleDeselectFile}
-              className="hover:bg-gray-200 dark:hover:bg-neutral-900"
+              className="w-full mt-3"
+              onClick={handleUpload}
+              disabled={uploading}
             >
-              <X className="h-4 w-4" />
-              <span className="sr-only">Deselect file</span>
+              {uploading ? "Uploading..." : "Upload"}
             </Button>
           </div>
         ) : (
-          <Input
-            type="file"
-            accept="audio/*"
-            onChange={handleFileChange}
-            ref={fileInputRef}
-            className="mb-4 dark:bg-neutral-950 dark:text-white"
-          />
+          <div
+            className="border-2 border-dashed rounded-lg p-8 mb-4 cursor-pointer flex flex-col items-center justify-center"
+            onClick={() => fileInputRef.current?.click()}
+          >
+            <input
+              type="file"
+              accept="audio/*"
+              onChange={handleFileChange}
+              ref={fileInputRef}
+              className="hidden"
+            />
+            <div className="flex flex-col items-center text-center">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="40"
+                height="40"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="dark:text-neutral-200 mb-2"
+              >
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                <polyline points="17 8 12 3 7 8" />
+                <line x1="12" y1="3" x2="12" y2="15" />
+              </svg>
+              <p className="text-sm font-medium dark:text-white">
+                Click to upload or drag and drop
+              </p>
+              <p className="text-xs dark:text-neutral-200 mt-1">
+                Supported formats: MP3, WAV, FLAC
+              </p>
+            </div>
+          </div>
         )}
-
-        <Button
-          className="w-full mt-3"
-          onClick={handleUpload}
-          disabled={uploading}
-        >
-          {uploading ? "Uploading..." : "Upload"}
-        </Button>
 
         {uploading && (
           <div ref={progressRef}>
@@ -159,7 +190,7 @@ export default function FileUpload() {
         {shareableLink && (
           <div className="mt-4 p-4 border rounded-md">
             {uploadSuccess && (
-              <div className="mb-2 text-sm">
+              <div className="mb-2 text-sm flex items-center">
                 File uploaded successfully!
               </div>
             )}
@@ -176,12 +207,33 @@ export default function FileUpload() {
               <Button
                 variant="outline"
                 size="icon"
-                onClick={handleCopyLink}
+                onClick={() => {
+                  // Create a temporary textarea element
+                  const textarea = document.createElement("textarea");
+                  textarea.value = shareableLink;
+                  textarea.style.position = "fixed"; // Make it invisible
+                  document.body.appendChild(textarea);
+                  textarea.focus();
+                  textarea.select();
+
+                  try {
+                    // Execute copy command
+                    document.execCommand("copy");
+                    // Handle success animation
+                    setIsCopying(true);
+                    setTimeout(() => setIsCopying(false), 1500);
+                  } catch (err) {
+                    console.error("Failed to copy: ", err);
+                  } finally {
+                    // Clean up
+                    document.body.removeChild(textarea);
+                  }
+                }}
                 className="dark:text-white"
-                disabled={isCopying} // Disable during animation
+                disabled={isCopying}
               >
                 {isCopying ? (
-                  <Check className="h-4 w-4 animate-pulse" /> // Animated checkmark
+                  <Check className="h-4 w-4 animate-pulse" />
                 ) : (
                   <Copy className="h-4 w-4" />
                 )}

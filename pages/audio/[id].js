@@ -57,11 +57,18 @@ export default function AudioPage({ fileMetadata, fileId, fileName }) {
     const [isPlaying, setIsPlaying] = useState(false);
     const [progress, setProgress] = useState(0);
     const [duration, setDuration] = useState(0);
-    const [volume, setVolume] = useState(1);
+    const [volume, setVolume] = useState(0.5);
     const [isMuted, setIsMuted] = useState(false);
     const [showMetadataDialogOpen, setShowMetadataDialogOpen] = useState(false); // Now controlling manually
     const router = useRouter();
     const [error, setError] = useState(null); // State to handle audio loading errors
+
+    useEffect(() => {
+        // Set initial volume when the component mounts
+        if (audioRef.current) {
+            audioRef.current.volume = volume;
+        }
+    }, []); // Empty dependency array ensures this runs only once on mount
 
     useEffect(() => {
         setProgress(0);
@@ -95,7 +102,7 @@ export default function AudioPage({ fileMetadata, fileId, fileName }) {
             setVolume(0);
         } else {
             audioRef.current.muted = false;
-            setVolume(audioRef.current.lastVolumeValue || 1);
+            setVolume(audioRef.current.lastVolumeValue ?? 0.5);
         }
         setIsMuted((prev) => !prev);
     };
@@ -201,7 +208,7 @@ export default function AudioPage({ fileMetadata, fileId, fileName }) {
                     <CardHeader className="pb-0 pt-6 px-6">
                         <div className="flex justify-between items-center">
                             <div>
-                                <h2 className="text-2xl font-semibold tracking-tight dark:text-white">{fileMetadata.common?.title || fileName}</h2>
+                                <h2 className="text-2xl font-semibold dark:text-white">{fileMetadata.common?.title || fileName}</h2>
                                 {fileMetadata.common?.artist && (
                                     <p className="text-sm text-muted-foreground dark:text-neutral-400">{fileMetadata.common.artist}</p>
                                 )}
@@ -217,7 +224,7 @@ export default function AudioPage({ fileMetadata, fileId, fileName }) {
                                     <DropdownMenuItem onClick={openMetadataDialog} className="cursor-pointer dark:text-white hover:bg-neutral-700 hover:text-white">
                                         Show Metadata
                                     </DropdownMenuItem>
-                                    <DropdownMenuItem onClick={handleDownload} className="dark:text-white hover:bg-neutral-700 hover:text-white">
+                                    <DropdownMenuItem onClick={handleDownload} className="cursor-pointer dark:text-white hover:bg-neutral-700 hover:text-white">
                                         Download
                                     </DropdownMenuItem>
                                 </DropdownMenuContent>
@@ -242,7 +249,7 @@ export default function AudioPage({ fileMetadata, fileId, fileName }) {
                             <span className="text-sm text-muted-foreground dark:text-neutral-400">{formatTime(progress)}</span>
                             <span className="text-sm text-muted-foreground dark:text-neutral-400">{formatTime(duration)}</span>
                         </div>
-                        <div className="group relative">
+                        <div className="group relative cursor-pointer">
                             <Slider
                                 value={[progress]}
                                 max={duration}
@@ -275,9 +282,9 @@ export default function AudioPage({ fileMetadata, fileId, fileName }) {
                                 <Button onClick={toggleMute} variant="ghost" size="icon" className="rounded-full">
                                     {isMuted ? <VolumeX size={20} className="dark:text-white" /> : <Volume2 size={20} className="dark:text-white" />}
                                 </Button>
-                                <div className="group relative w-24 md:w-32">
+                                <div className="group relative w-24 md:w-32 cursor-pointer">
                                     <Slider
-                                        defaultValue={[1]}
+                                        defaultValue={[0.5]}
                                         max={1}
                                         step={0.01}
                                         value={[volume]}
@@ -296,22 +303,21 @@ export default function AudioPage({ fileMetadata, fileId, fileName }) {
                             </div>
                         </div>
 
-
                     </CardContent>
                 </Card>
             </main>
 
-            {/* Manual Dialog Implementation */}
+            {/* Dialog Implementation */}
             {showMetadataDialogOpen && (
                 <div className="fixed inset-0 z-50 overflow-y-auto" aria-modal="true" role="dialog">
                     {/* Background Overlay */}
-                    <div className="fixed inset-0 bg-black/50 dark:bg-neutral-900/80 backdrop-blur-[2px] transition-opacity" onClick={closeMetadataDialog} aria-hidden="true"></div>
+                    <div className="fixed inset-0 bg-black/50 dark:bg-neutral-900/80 backdrop-blur-[2px] transition-opa
 
-                    {/* Dialog Container - centered */}
+                    {/* Dialog Container */}city" onClick={closeMetadataDialog} aria-hidden="true"></div>
                     <div className="relative flex items-center justify-center min-h-screen p-4">
                         {/* Dialog Panel */}
                         <div className="relative bg-white dark:bg-neutral-900 rounded-lg shadow-xl overflow-hidden max-w-[90%] md:max-w-[80%] lg:max-w-[70%] xl:max-w-[60%] w-full border dark:border-neutral-700">
-                            <div className="px-6 py-6 flex justify-between items-center"> {/* Modified header div */}
+                            <div className="px-6 py-6 flex justify-between items-center">
                                 <div className="text-lg font-medium text-gray-900 dark:text-white">Metadata</div>
                                     <Button variant="secondary" onClick={closeMetadataDialog}>Close
                                         <X className="h-4 w-4" />
@@ -377,10 +383,10 @@ export default function AudioPage({ fileMetadata, fileId, fileName }) {
                                     </div>
                                 </div>
                             </ScrollArea>
-                            <div className="px-6 py-4 bg-gray-50 dark:bg-neutral-800 border-t dark:border-neutral-700 flex justify-end">
-                                <Button variant="secondary" onClick={downloadMetadata} className="space-x-2">
-                                    <Download className="h-4 w-4" />
-                                    <span>Download Metadata</span>
+                            <div className="px-6 py-4 border-t dark:border-neutral-700 flex justify-end">
+                                <Button variant="secondary" onClick={downloadMetadata}>
+                                    Download
+                                    <Download className="h-4 w-4 ml-2" />
                                 </Button>
                             </div>
                         </div>
