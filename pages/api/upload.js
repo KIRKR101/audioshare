@@ -3,6 +3,7 @@ import { parseBuffer, parseFile } from 'music-metadata';
 import fs from 'fs/promises';
 import { existsSync } from 'fs';
 import path from 'path';
+import { db } from '../../lib/firebaseAdmin';
 import crypto from 'crypto';
 import { pipeline } from 'stream/promises';
 import { createReadStream, createWriteStream } from 'fs';
@@ -176,8 +177,17 @@ async function processAudioFile(req, res) { // Receive req and res
         const host = req.headers['host'];
         const baseUrl = `${protocol}://${host}`;
 
-        // --- Use the constructed base URL ---
         await appendToAudioList(fileMetadata.originalName, `${baseUrl}${fileMetadata.publicPath}`, fileMetadata);
+
+        // --- Add entry to Firestore ---
+        try {
+            const audioRef = db.collection('audioFiles').doc(fileMetadata.fileId);
+            // Store the entire fileMetadata object in Firestore
+            await audioRef.set(fileMetadata);
+            logger.info(`Full metadata stored in Firestore for fileId: ${fileMetadata.fileId}`);
+        } catch (error) {
+            logger.error(`Failed to store full metadata in Firestore for fileId: ${fileMetadata.fileId}`, error);
+        }
 
         return fileMetadata;
 
@@ -311,4 +321,4 @@ async function appendToAudioList(originalName, publicPath, metadata) {
     } catch (error) {
         logger.error('Failed to append to audio list', error);
     }
-}
+} 

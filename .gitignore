@@ -39,3 +39,15 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Firebase service account key (contains sensitive credentials)
+serviceAccountKey.json
+/lib/firebaseConfig.js
+
+# User uploaded content & temporary files
+/temp-uploads/
+/public/audio/*
+/public/album-art/*
+!/public/album-art/placeholder.png
+/public/audio_files.txt
+public/audio_files.txt

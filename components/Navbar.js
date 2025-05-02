@@ -58,6 +58,9 @@ const Navbar = () => {
                 <a href="/audio_files.txt" className="text-black dark:text-gray-200 dark:hover:text-white px-3 py-2 rounded-md text-sm font-medium">
                   Index
                 </a>
+                <a href="/archive" className="text-black dark:text-gray-200 dark:hover:text-white px-3 py-2 rounded-md text-sm font-medium">
+                  Archive
+                </a>
               </div>
             </div>
 
