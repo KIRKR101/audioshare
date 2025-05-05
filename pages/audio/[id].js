@@ -201,199 +201,511 @@ export default function AudioPage({ fileMetadata, fileId, fileName }) {
 
 
     return (
-        <div className="bg-neutral-100 dark:bg-neutral-950 h-dvh">
-            <Navbar />
-            <main className="container mx-auto pt-8 md:pt-16">
-                <Card className="max-w-xl mx-auto bg-white dark:bg-neutral-950 shadow-xl rounded-xl overflow-hidden">
-                    <CardHeader className="pb-0 pt-6 px-6">
-                        <div className="flex justify-between items-center">
-                            <div>
-                                <h2 className="text-2xl font-semibold dark:text-white">{fileMetadata.common?.title || fileName}</h2>
-                                {fileMetadata.common?.artist && (
-                                    <p className="text-sm text-muted-foreground dark:text-neutral-400">{fileMetadata.common.artist}</p>
-                                )}
-                            </div>
-                            <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                    <Button variant="ghost" className="h-8 w-8 p-0 rounded-full hover:bg-gray-100 dark:hover:bg-neutral-800">
-                                        <MoreVertical className="h-4 w-4 dark:text-white" />
-                                        <span className="sr-only">Open dropdown</span>
-                                    </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end" className="w-40 bg-white dark:bg-neutral-800 border dark:border-neutral-700">
-                                    <DropdownMenuItem onClick={openMetadataDialog} className="cursor-pointer dark:text-white hover:bg-neutral-700 hover:text-white">
-                                        Show Metadata
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem onClick={handleDownload} className="cursor-pointer dark:text-white hover:bg-neutral-700 hover:text-white">
-                                        Download
-                                    </DropdownMenuItem>
-                                </DropdownMenuContent>
-                            </DropdownMenu>
-                        </div>
-                    </CardHeader>
-
-                    <CardContent className="p-6">
-                        <div className="aspect-w-1 aspect-h-1 overflow-hidden rounded-lg mb-4">
-                            <img
-                                src={fileMetadata.albumArt || "/album-art/placeholder.png"}
-                                alt="Album Art"
-                                className="object-cover w-full h-full"
-                            />
-                        </div>
-
-                        <audio ref={audioRef} src={audioSrc} preload="metadata" className="hidden" onError={() => setError("Error loading audio.")} /> {/* onError directly on audio tag */}
-
-                        {error && <p className="text-red-500 mb-2">{error}</p>} {/* Display error message */}
-
-                        <div className="flex items-center justify-between mb-2">
-                            <span className="text-sm text-muted-foreground dark:text-neutral-400">{formatTime(progress)}</span>
-                            <span className="text-sm text-muted-foreground dark:text-neutral-400">{formatTime(duration)}</span>
-                        </div>
-                        <div className="group relative cursor-pointer">
-                            <Slider
-                                value={[progress]}
-                                max={duration}
-                                step={0.1}
-                                onValueChange={handleSliderChange}
-                                className="mb-4"
-                                thumbClassName={cn(
-                                    "group-hover:block block h-4 w-4 rounded-full bg-blue-500 ring-0 transition-opacity duration-200 focus-visible:ring-0 focus-visible:ring-offset-0 hover:bg-blue-600 group-hover:scale-110 dark:bg-blue-500 dark:hover:bg-blue-600",
-                                    "absolute top-1/2 left-0 -translate-y-1/2 -mt-2",
-                                    "opacity-0 group-hover:opacity-100",
-                                    "z-10"
-                                )}
-                                trackClassName="relative h-1.5 w-full grow rounded-full bg-gray-500 dark:bg-neutral-700 data-[orientation=horizontal]:h-1.5 data-[orientation=vertical]:w-1.5"
-                                rangeClassName="absolute h-1.5 rounded-full bg-blue-500 dark:bg-blue-500 data-[orientation=horizontal]:h-1.5 data-[orientation=vertical]:w-1.5"
-                            />
-                        </div>
-
-
-                        <div className="flex justify-around items-center">
-                            <Button
-                                ref={playButtonRef}
-                                onClick={togglePlay}
-                                variant="secondary"
-                                size="icon"
-                                className="rounded-full"
-                            >
-                                {isPlaying ? <Pause size={24} className="dark:text-white" /> : <Play size={24} className="dark:text-white" />}
-                            </Button>
-                            <div className="flex items-center space-x-2">
-                                <Button onClick={toggleMute} variant="ghost" size="icon" className="rounded-full">
-                                    {isMuted ? <VolumeX size={20} className="dark:text-white" /> : <Volume2 size={20} className="dark:text-white" />}
-                                </Button>
-                                <div className="group relative w-24 md:w-32 cursor-pointer">
-                                    <Slider
-                                        defaultValue={[0.5]}
-                                        max={1}
-                                        step={0.01}
-                                        value={[volume]}
-                                        onValueChange={handleVolumeChange}
-                                        className=""
-                                        thumbClassName={cn(
-                                            "group-hover:block block h-3 w-3 rounded-full bg-red-700 ring-0 transition-opacity duration-200 focus-visible:ring-0 focus-visible:ring-offset-0 hover:bg-gray-800 dark:bg-red-700 dark:hover:bg-neutral-200",
-                                            "absolute top-1/2 left-0 -translate-y-1/2 -mt-1.5",
-                                            "opacity-0 group-hover:opacity-100",
-                                            "z-10"
-                                        )}
-                                        trackClassName="relative h-1 w-full grow rounded-full bg-gray-500 dark:bg-neutral-700 data-[orientation=horizontal]:h-1 data-[orientation=vertical]:w-1"
-                                        rangeClassName="absolute h-1 rounded-full bg-blue-500 dark:bg-blue-500 data-[orientation=horizontal]:h-1 data-[orientation=vertical]:w-1"
-                                    />
-                                </div>
-                            </div>
-                        </div>
-
-                    </CardContent>
-                </Card>
-            </main>
-
-            {/* Dialog Implementation */}
-            {showMetadataDialogOpen && (
-                <div className="fixed inset-0 z-50 overflow-y-auto" aria-modal="true" role="dialog">
-                    {/* Background Overlay */}
-                    <div className="fixed inset-0 bg-black/50 dark:bg-neutral-900/80 backdrop-blur-[2px] transition-opa
-
-                    {/* Dialog Container */}city" onClick={closeMetadataDialog} aria-hidden="true"></div>
-                    <div className="relative flex items-center justify-center min-h-screen p-4">
-                        {/* Dialog Panel */}
-                        <div className="relative bg-white dark:bg-neutral-900 rounded-lg shadow-xl overflow-hidden max-w-[90%] md:max-w-[80%] lg:max-w-[70%] xl:max-w-[60%] w-full border dark:border-neutral-700">
-                            <div className="px-6 py-6 flex justify-between items-center">
-                                <div className="text-lg font-medium text-gray-900 dark:text-white">Metadata</div>
-                                    <Button variant="secondary" onClick={closeMetadataDialog}>Close
-                                        <X className="h-4 w-4" />
-                                    </Button>
-                            </div>
-                            <ScrollArea className="h-[70vh] w-full rounded-md px-4">
-                                <div className="pb-4">
-                                    <div className="overflow-x-auto">
-                                        <table className="min-w-full text-xs md:text-sm">
-                                            <tbody>
-                                                {/* === Basic Information === */}
-                                                <MetadataRow category="Basic" isCategoryRow />
-                                                {fileMetadata.common?.title && <MetadataRow category="" property="Filename" value={fileMetadata.originalName} />}
-                                                {fileMetadata.common?.title && <MetadataRow category="" property="Title" value={fileMetadata.common.title} />}
-                                                {fileMetadata.common?.artist && <MetadataRow category="" property="Artist" value={fileMetadata.common.artist} />}
-                                                {fileMetadata.common?.album && <MetadataRow category="" property="Album" value={fileMetadata.common.album} />}
-                                                {fileMetadata.common?.year && <MetadataRow category="" property="Year" value={fileMetadata.common.year} />}
-                                                {fileMetadata.common?.genre && <MetadataRow category="" property="Genre" value={fileMetadata.common.genre} />}
-                                                {fileMetadata.common?.comment && <MetadataRow category="" property="Comment" value={fileMetadata.common.comment} />}
-                                                {fileMetadata.common?.disk?.no && <MetadataRow category="" property="Disc" value={fileMetadata.common.disk.no} />}
-                                                {fileMetadata.common?.disk?.total && <MetadataRow category="" property="Total Discs" value={fileMetadata.common.disk.total} />}
-                                                {fileMetadata.common?.track?.no && <MetadataRow category="" property="Track Number" value={fileMetadata.common.track.no} />}
-                                                {fileMetadata.common?.track?.total && <MetadataRow category="" property="Total Tracks" value={fileMetadata.common.track.total} />}
-                                                {fileMetadata.common?.composer && <MetadataRow category="" property="Composer" value={fileMetadata.common.composer} />}
-                                                {fileMetadata.common?.lyrics && <MetadataRow category="" property="Lyrics" value={fileMetadata.common.lyrics} />}
-                                                {fileMetadata.common?.encoder && <MetadataRow category="" property="Encoder" value={fileMetadata.common.encoder} />}
-                                                {fileMetadata.format?.container && <MetadataRow category="" property="Container Format" value={fileMetadata.format.container} />}
-                                                {fileMetadata.format?.codec && <MetadataRow category="" property="Codec" value={fileMetadata.format.codec} />}
-                                                {<MetadataRow category="" property="Lossless" value={fileMetadata.format?.lossless ? 'Yes' : 'No'} />} {/* Lossless is boolean, always show */}
-                                                {fileMetadata.format?.bitrate && <MetadataRow category="" property="Bitrate" value={`${(fileMetadata.format.bitrate / 1000).toFixed(0)} kbps`} />}
-                                                {fileMetadata.format?.sampleRate && <MetadataRow category="" property="Sample Rate" value={`${(fileMetadata.format.sampleRate / 1000).toFixed(0)} kHz`} />}
-                                                {fileMetadata.format?.channels && <MetadataRow category="" property="Channels" value={fileMetadata.format.channels} />}
-                                                {fileMetadata.format?.bitsPerSample && <MetadataRow category="" property="Bits per Sample" value={fileMetadata.format.bitsPerSample} />}
-                                                {fileMetadata.format?.duration && <MetadataRow category="" property="Duration" value={`${formatTime(fileMetadata.format.duration)}`} />}
-                                                {fileMetadata.format?.bitrateMode && <MetadataRow category="" property="Bitrate Mode" value={fileMetadata.format.bitrateMode} />}
-                                                {fileMetadata.format?.channelLayout && <MetadataRow category="" property="Channel Layout" value={fileMetadata.format.channelLayout} />}
-                                                {fileMetadata.format?.sampleRatePrecision && <MetadataRow category="" property="Sample Rate Precision" value={fileMetadata.format.sampleRatePrecision} />}
-                                                {fileMetadata.format?.numberOfChannels && <MetadataRow category="" property="Number of Channels" value={fileMetadata.format.numberOfChannels} />}
-                                                {fileMetadata.format?.samplesPerSecond && <MetadataRow category="" property="Samples per Second" value={fileMetadata.format.samplesPerSecond} />}
-                                                {fileMetadata.format?.bitsPerChannel && <MetadataRow category="" property="Bits per Channel" value={fileMetadata.format.bitsPerChannel} />}
-                                                {fileMetadata.format?.encoding && <MetadataRow category="" property="Encoding" value={fileMetadata.format.encoding} />}
-                                                {fileMetadata.format?.sampleRateRatio && <MetadataRow category="" property="Sample Rate Ratio" value={fileMetadata.format.sampleRateRatio} />}
-
-
-                                                {/* === Native Metadata === */}
-                                                <MetadataRow category="Native" isCategoryRow />
-                                                {fileMetadata.native && Object.keys(fileMetadata.native).map((formatKey) => (
-                                                    <React.Fragment key={formatKey}>
-                                                        {fileMetadata.native[formatKey].map((tag, index) => (
-                                                            <MetadataRow
-                                                                key={`${formatKey}-${index}`}
-                                                                category=""
-                                                                property={tag.id || tag.name || `Tag ${index + 1}`} // Use tag.id for ID3, tag.name for Vorbis, fallback to index
-                                                                value={tag.value}
-                                                            />
-                                                        ))}
-                                                    </React.Fragment>
-                                                ))}
-
-
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                </div>
-                            </ScrollArea>
-                            <div className="px-6 py-4 border-t dark:border-neutral-700 flex justify-end">
-                                <Button variant="secondary" onClick={downloadMetadata}>
-                                    Download
-                                    <Download className="h-4 w-4 ml-2" />
-                                </Button>
-                            </div>
-                        </div>
-                    </div>
+      <div className="bg-neutral-100 dark:bg-neutral-950 h-dvh">
+        <Navbar />
+        <main
+          role="main"
+          className="container mx-auto pt-16 md:pt-32 px-4 sm:px-6 lg:px-8"
+        >
+          <Card
+            role="region"
+            aria-labelledby="track-title"
+            className="max-w-xl mx-auto bg-white dark:bg-neutral-950 shadow-xl rounded-xl overflow-hidden"
+          >
+            <CardHeader className="pb-0 pt-6 px-6">
+              <div className="flex justify-between items-center">
+                <div>
+                  <h2
+                    id="track-title"
+                    className="text-2xl font-semibold dark:text-white"
+                  >
+                    {fileMetadata.common?.title || fileName}
+                  </h2>
+                  {fileMetadata.common?.artist && (
+                    <p className="text-sm text-muted-foreground dark:text-neutral-400">
+                      {fileMetadata.common.artist}
+                    </p>
+                  )}
                 </div>
-            )}
-        </div>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      aria-label="Track options"
+                      aria-haspopup="true"
+                      className="h-8 w-8 p-0 rounded-full hover:bg-gray-100 dark:hover:bg-neutral-800"
+                    >
+                      <MoreVertical className="h-4 w-4 dark:text-white" />
+                      <span className="sr-only">Open track options menu</span>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent
+                    align="end"
+                    role="menu"
+                    aria-label="Track options"
+                    className="w-40 bg-white dark:bg-neutral-800 border dark:border-neutral-700"
+                  >
+                    <DropdownMenuItem
+                      role="menuitem"
+                      onClick={openMetadataDialog}
+                      className="cursor-pointer dark:text-white hover:bg-neutral-700 hover:text-white"
+                    >
+                      Show Metadata
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      role="menuitem"
+                      onClick={handleDownload}
+                      className="cursor-pointer dark:text-white hover:bg-neutral-700 hover:text-white"
+                    >
+                      Download
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+            </CardHeader>
+
+            <CardContent className="p-6">
+              <div className="aspect-w-1 aspect-h-1 overflow-hidden rounded-lg mb-4">
+                <img
+                  src={
+                    fileMetadata.albumArt
+                      ? `/api${fileMetadata.albumArt}`
+                      : "/album-art/placeholder.png"
+                  }
+                  alt={
+                    fileMetadata.common?.title
+                      ? `Album art for ${fileMetadata.common.title}${
+                          fileMetadata.common?.artist
+                            ? ` by ${fileMetadata.common.artist}`
+                            : ""
+                        }`
+                      : `Album art for ${fileName}`
+                  }
+                  className="object-cover w-full h-full"
+                  onError={(e) => {
+                    if (e.target.src !== "/album-art/placeholder.png") {
+                      e.target.onerror = null;
+                      e.target.src = "/album-art/placeholder.png";
+                      e.target.alt = "Placeholder album art";
+                    }
+                  }}
+                />
+              </div>
+              <audio
+                ref={audioRef}
+                src={audioSrc}
+                preload="metadata"
+                className="hidden"
+                onError={() => setError("Error loading audio.")}
+                aria-hidden="true"
+              />{" "}
+              {error && (
+                <p role="alert" className="text-red-500 mb-2">
+                  {error}
+                </p>
+              )}{" "}
+              <div className="flex items-center justify-between mb-2">
+                <span
+                  className="text-sm text-muted-foreground dark:text-neutral-400"
+                  aria-label="Current time"
+                >
+                  {formatTime(progress)}
+                </span>
+                <span
+                  className="text-sm text-muted-foreground dark:text-neutral-400"
+                  aria-label="Total duration"
+                >
+                  {formatTime(duration)}
+                </span>
+              </div>
+              <div className="group relative cursor-pointer">
+                <Slider
+                  aria-label="Seek track"
+                  aria-valuemin={0}
+                  aria-valuemax={duration || 0}
+                  aria-valuenow={progress || 0}
+                  aria-valuetext={`Current time ${formatTime(progress)}`}
+                  value={[progress]}
+                  max={duration}
+                  step={0.1}
+                  onValueChange={handleSliderChange}
+                  className="mb-4"
+                  thumbClassName={cn(
+                    "group-hover:block block h-4 w-4 rounded-full bg-blue-500 ring-0 transition-opacity duration-200 focus-visible:ring-0 focus-visible:ring-offset-0 hover:bg-blue-600 group-hover:scale-110 dark:bg-blue-500 dark:hover:bg-blue-600",
+                    "absolute top-1/2 left-0 -translate-y-1/2 -mt-2",
+                    "opacity-0 group-hover:opacity-100",
+                    "z-10"
+                  )}
+                  trackClassName="relative h-1.5 w-full grow rounded-full bg-gray-500 dark:bg-neutral-700 data-[orientation=horizontal]:h-1.5 data-[orientation=vertical]:w-1.5"
+                  rangeClassName="absolute h-1.5 rounded-full bg-blue-500 dark:bg-blue-500 data-[orientation=horizontal]:h-1.5 data-[orientation=vertical]:w-1.5"
+                />
+              </div>
+              <div className="flex justify-around items-center">
+                <Button
+                  ref={playButtonRef}
+                  onClick={togglePlay}
+                  variant="secondary"
+                  size="icon"
+                  className="rounded-full"
+                  aria-label={isPlaying ? "Pause" : "Play"}
+                >
+                  {isPlaying ? (
+                    <Pause
+                      size={24}
+                      className="dark:text-white"
+                      aria-hidden="true"
+                    />
+                  ) : (
+                    <Play
+                      size={24}
+                      className="dark:text-white"
+                      aria-hidden="true"
+                    />
+                  )}
+                </Button>
+                <div className="flex items-center space-x-2">
+                  <Button
+                    onClick={toggleMute}
+                    variant="ghost"
+                    size="icon"
+                    className="rounded-full"
+                    aria-label={isMuted ? "Unmute" : "Mute"}
+                  >
+                    {isMuted ? (
+                      <VolumeX
+                        size={20}
+                        className="dark:text-white"
+                        aria-hidden="true"
+                      />
+                    ) : (
+                      <Volume2
+                        size={20}
+                        className="dark:text-white"
+                        aria-hidden="true"
+                      />
+                    )}
+                  </Button>
+                  <div className="group relative w-24 md:w-32 cursor-pointer">
+                    <Slider
+                      aria-label="Volume"
+                      aria-valuemin={0}
+                      aria-valuemax={1}
+                      aria-valuenow={volume}
+                      aria-valuetext={`${Math.round(volume * 100)}%`}
+                      defaultValue={[0.5]}
+                      max={1}
+                      step={0.01}
+                      value={[volume]}
+                      onValueChange={handleVolumeChange}
+                      className=""
+                      thumbClassName={cn(
+                        "group-hover:block block h-3 w-3 rounded-full bg-red-700 ring-0 transition-opacity duration-200 focus-visible:ring-0 focus-visible:ring-offset-0 hover:bg-gray-800 dark:bg-red-700 dark:hover:bg-neutral-200",
+                        "absolute top-1/2 left-0 -translate-y-1/2 -mt-1.5",
+                        "opacity-0 group-hover:opacity-100",
+                        "z-10"
+                      )}
+                      trackClassName="relative h-1 w-full grow rounded-full bg-gray-500 dark:bg-neutral-700 data-[orientation=horizontal]:h-1 data-[orientation=vertical]:w-1"
+                      rangeClassName="absolute h-1 rounded-full bg-blue-500 dark:bg-blue-500 data-[orientation=horizontal]:h-1 data-[orientation=vertical]:w-1"
+                    />
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </main>
+
+        {/* Dialog Implementation */}
+        {showMetadataDialogOpen && (
+          <div
+            className="fixed inset-0 z-50 overflow-y-auto"
+            aria-modal="true"
+            role="dialog"
+          >
+            {/* Background Overlay */}
+            <div
+              className="fixed inset-0 bg-black/50 dark:bg-neutral-900/80 backdrop-blur-[2px] transition-opa
+
+                    {/* Dialog Container */}city"
+              onClick={closeMetadataDialog}
+              aria-hidden="true"
+            ></div>
+            <div className="relative flex items-center justify-center min-h-screen p-4">
+              {/* Dialog Panel */}
+              <div className="relative bg-white dark:bg-neutral-900 rounded-lg shadow-xl overflow-hidden max-w-[90%] md:max-w-[80%] lg:max-w-[70%] xl:max-w-[60%] w-full border dark:border-neutral-700">
+                <div className="px-6 py-6 flex justify-between items-center">
+                  <div className="text-lg font-medium text-gray-900 dark:text-white">
+                    Metadata
+                  </div>
+                  <Button variant="secondary" onClick={closeMetadataDialog}>
+                    Close
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+                <ScrollArea className="h-[70vh] w-full rounded-md px-4">
+                  <div className="pb-4">
+                    <div className="overflow-x-auto">
+                      <table className="min-w-full text-xs md:text-sm">
+                        <tbody>
+                          {/* === Basic Information === */}
+                          <MetadataRow category="Basic" isCategoryRow />
+                          {fileMetadata.common?.title && (
+                            <MetadataRow
+                              category=""
+                              property="Filename"
+                              value={fileMetadata.originalName}
+                            />
+                          )}
+                          {fileMetadata.common?.title && (
+                            <MetadataRow
+                              category=""
+                              property="Title"
+                              value={fileMetadata.common.title}
+                            />
+                          )}
+                          {fileMetadata.common?.artist && (
+                            <MetadataRow
+                              category=""
+                              property="Artist"
+                              value={fileMetadata.common.artist}
+                            />
+                          )}
+                          {fileMetadata.common?.album && (
+                            <MetadataRow
+                              category=""
+                              property="Album"
+                              value={fileMetadata.common.album}
+                            />
+                          )}
+                          {fileMetadata.common?.year && (
+                            <MetadataRow
+                              category=""
+                              property="Year"
+                              value={fileMetadata.common.year}
+                            />
+                          )}
+                          {fileMetadata.common?.genre && (
+                            <MetadataRow
+                              category=""
+                              property="Genre"
+                              value={fileMetadata.common.genre}
+                            />
+                          )}
+                          {fileMetadata.common?.comment && (
+                            <MetadataRow
+                              category=""
+                              property="Comment"
+                              value={fileMetadata.common.comment}
+                            />
+                          )}
+                          {fileMetadata.common?.disk?.no && (
+                            <MetadataRow
+                              category=""
+                              property="Disc"
+                              value={fileMetadata.common.disk.no}
+                            />
+                          )}
+                          {fileMetadata.common?.disk?.total && (
+                            <MetadataRow
+                              category=""
+                              property="Total Discs"
+                              value={fileMetadata.common.disk.total}
+                            />
+                          )}
+                          {fileMetadata.common?.track?.no && (
+                            <MetadataRow
+                              category=""
+                              property="Track Number"
+                              value={fileMetadata.common.track.no}
+                            />
+                          )}
+                          {fileMetadata.common?.track?.total && (
+                            <MetadataRow
+                              category=""
+                              property="Total Tracks"
+                              value={fileMetadata.common.track.total}
+                            />
+                          )}
+                          {fileMetadata.common?.composer && (
+                            <MetadataRow
+                              category=""
+                              property="Composer"
+                              value={fileMetadata.common.composer}
+                            />
+                          )}
+                          {fileMetadata.common?.lyrics && (
+                            <MetadataRow
+                              category=""
+                              property="Lyrics"
+                              value={fileMetadata.common.lyrics}
+                            />
+                          )}
+                          {fileMetadata.common?.encoder && (
+                            <MetadataRow
+                              category=""
+                              property="Encoder"
+                              value={fileMetadata.common.encoder}
+                            />
+                          )}
+                          {fileMetadata.format?.container && (
+                            <MetadataRow
+                              category=""
+                              property="Container Format"
+                              value={fileMetadata.format.container}
+                            />
+                          )}
+                          {fileMetadata.format?.codec && (
+                            <MetadataRow
+                              category=""
+                              property="Codec"
+                              value={fileMetadata.format.codec}
+                            />
+                          )}
+                          {
+                            <MetadataRow
+                              category=""
+                              property="Lossless"
+                              value={
+                                fileMetadata.format?.lossless ? "Yes" : "No"
+                              }
+                            />
+                          }{" "}
+                          {/* Lossless is boolean, always show */}
+                          {fileMetadata.format?.bitrate && (
+                            <MetadataRow
+                              category=""
+                              property="Bitrate"
+                              value={`${(
+                                fileMetadata.format.bitrate / 1000
+                              ).toFixed(0)} kbps`}
+                            />
+                          )}
+                          {fileMetadata.format?.sampleRate && (
+                            <MetadataRow
+                              category=""
+                              property="Sample Rate"
+                              value={`${(
+                                fileMetadata.format.sampleRate / 1000
+                              ).toFixed(0)} kHz`}
+                            />
+                          )}
+                          {fileMetadata.format?.channels && (
+                            <MetadataRow
+                              category=""
+                              property="Channels"
+                              value={fileMetadata.format.channels}
+                            />
+                          )}
+                          {fileMetadata.format?.bitsPerSample && (
+                            <MetadataRow
+                              category=""
+                              property="Bits per Sample"
+                              value={fileMetadata.format.bitsPerSample}
+                            />
+                          )}
+                          {fileMetadata.format?.duration && (
+                            <MetadataRow
+                              category=""
+                              property="Duration"
+                              value={`${formatTime(
+                                fileMetadata.format.duration
+                              )}`}
+                            />
+                          )}
+                          {fileMetadata.format?.bitrateMode && (
+                            <MetadataRow
+                              category=""
+                              property="Bitrate Mode"
+                              value={fileMetadata.format.bitrateMode}
+                            />
+                          )}
+                          {fileMetadata.format?.channelLayout && (
+                            <MetadataRow
+                              category=""
+                              property="Channel Layout"
+                              value={fileMetadata.format.channelLayout}
+                            />
+                          )}
+                          {fileMetadata.format?.sampleRatePrecision && (
+                            <MetadataRow
+                              category=""
+                              property="Sample Rate Precision"
+                              value={fileMetadata.format.sampleRatePrecision}
+                            />
+                          )}
+                          {fileMetadata.format?.numberOfChannels && (
+                            <MetadataRow
+                              category=""
+                              property="Number of Channels"
+                              value={fileMetadata.format.numberOfChannels}
+                            />
+                          )}
+                          {fileMetadata.format?.samplesPerSecond && (
+                            <MetadataRow
+                              category=""
+                              property="Samples per Second"
+                              value={fileMetadata.format.samplesPerSecond}
+                            />
+                          )}
+                          {fileMetadata.format?.bitsPerChannel && (
+                            <MetadataRow
+                              category=""
+                              property="Bits per Channel"
+                              value={fileMetadata.format.bitsPerChannel}
+                            />
+                          )}
+                          {fileMetadata.format?.encoding && (
+                            <MetadataRow
+                              category=""
+                              property="Encoding"
+                              value={fileMetadata.format.encoding}
+                            />
+                          )}
+                          {fileMetadata.format?.sampleRateRatio && (
+                            <MetadataRow
+                              category=""
+                              property="Sample Rate Ratio"
+                              value={fileMetadata.format.sampleRateRatio}
+                            />
+                          )}
+                          {/* === Native Metadata === */}
+                          <MetadataRow category="Native" isCategoryRow />
+                          {fileMetadata.native &&
+                            Object.keys(fileMetadata.native).map(
+                              (formatKey) => (
+                                <React.Fragment key={formatKey}>
+                                  {fileMetadata.native[formatKey].map(
+                                    (tag, index) => (
+                                      <MetadataRow
+                                        key={`${formatKey}-${index}`}
+                                        category=""
+                                        property={
+                                          tag.id ||
+                                          tag.name ||
+                                          `Tag ${index + 1}`
+                                        } // Use tag.id for ID3, tag.name for Vorbis, fallback to index
+                                        value={tag.value}
+                                      />
+                                    )
+                                  )}
+                                </React.Fragment>
+                              )
+                            )}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </ScrollArea>
+                <div className="px-6 py-4 border-t dark:border-neutral-700 flex justify-end">
+                  <Button variant="secondary" onClick={downloadMetadata}>
+                    Download
+                    <Download className="h-4 w-4 ml-2" />
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
     );
 }
 

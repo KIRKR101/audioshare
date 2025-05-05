@@ -94,3 +94,23 @@ body {
     @apply bg-background text-foreground;
   }
 }
+
+/* Light mode (default) */
+body {
+  background-color: #ffffff;
+  color: #000000;
+}
+
+/* Dark mode */
+html.dark body {
+  background-color: #121212;
+  color: #ffffff;
+}
+
+body {
+   transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.no-transition * {
+   transition: none !important;
+}

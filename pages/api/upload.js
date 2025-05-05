@@ -6,6 +6,7 @@ import path from 'path';
 import crypto from 'crypto';
 import { pipeline } from 'stream/promises';
 import { createReadStream, createWriteStream } from 'fs';
+import sqlite3 from 'sqlite3'; // Import sqlite3
 
 // Disable default body parser
 export const config = {
@@ -126,8 +127,20 @@ async function processAudioFile(req, res) { // Receive req and res
     let metadata;
     const tempFilePath = req.file.path;
     const fileExt = path.extname(req.file.originalname).toLowerCase();
+    const dbPath = path.resolve(process.cwd(), 'lib/database.db'); // Define DB path relative to cwd
+    let db; // DB connection variable
 
     try {
+        // Connect to the database
+        db = new sqlite3.Database(dbPath, sqlite3.OPEN_READWRITE, (err) => {
+            if (err) {
+                logger.error('Error connecting to database in processAudioFile', err);
+                // Propagate the error to be caught by the outer catch block
+                throw new Error(`Database connection failed: ${err.message}`);
+            }
+            logger.debug('Connected to SQLite database for processing.');
+        });
+
         if (['.flac', '.ogg', '.wav', '.aiff', '.m4a'].includes(fileExt)) {
             logger.debug(`Using parseFile for ${fileExt} file`);
             metadata = await parseFile(tempFilePath, {
@@ -167,21 +180,77 @@ async function processAudioFile(req, res) { // Receive req and res
             common: commonMetadataWithoutPicture,
             native: nativeMetadataWithoutImage,
             uploadDate: new Date().toISOString(),
+            // Note: fileId is not stored in the DB as it's the primary key
         };
 
+        // --- Construct file URL ---
+        const fileUrl = `${fileMetadata.publicPath.replace(fileExt, '')}`;
+
+        // Store metadata in JSON file
         await storeMetadata(fileId, fileMetadata);
 
-        // --- Construct the base URL dynamically ---
-        const protocol = req.headers['x-forwarded-proto'] || 'http';  // Determine protocol
-        const host = req.headers['host'];
-        const baseUrl = `${protocol}://${host}`;
+        // --- Insert metadata into the database ---
+        const sql = `
+            INSERT INTO songs (
+                filename, filepath, size, artist, title, album, year, trackNumber,
+                genre, duration, bitrate, sampleRate, format, albumArtist, composer, diskNumber, extension, link
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `;
+        // Ensure values are null if undefined, especially for numeric types
+        const params = [
+            fileMetadata.originalName, // filename
+            fileMetadata.publicPath,   // filepath (relative public path)
+            fileMetadata.size ?? null,         // size
+            metadata.common?.artist ?? null,   // artist
+            metadata.common?.title ?? null,    // title
+            metadata.common?.album ?? null,    // album
+            metadata.common?.year ?? null,     // year
+            metadata.common?.track?.no ?? null,// trackNumber
+            metadata.common?.genre?.join(', ') ?? null, // genre (join if array)
+            metadata.format?.duration ?? null, // duration
+            metadata.format?.bitrate ?? null,  // bitrate
+            metadata.format?.sampleRate ?? null,// sampleRate
+            metadata.format?.codec ?? null,    // format (codec)
+            metadata.common?.albumartist ?? null, // albumArtist
+            metadata.common?.composer?.join(', ') ?? null, // composer (join if array)
+            metadata.common?.disk?.no ?? null,  // diskNumber
+            fileMetadata.fileExtension,
+            fileUrl
+        ];
 
-        // --- Use the constructed base URL ---
-        await appendToAudioList(fileMetadata.originalName, `${baseUrl}${fileMetadata.publicPath}`, fileMetadata);
+        // Use a promise to handle the async db operation
+        await new Promise((resolve, reject) => {
+            db.run(sql, params, function(err) { // Use function() to access this.lastID
+                if (err) {
+                    logger.error('Error inserting data into database', err);
+                    reject(new Error(`Database insertion failed: ${err.message}`));
+                } else {
+                    logger.info(`Song inserted into DB with ID: ${this.lastID}`);
+                    // Add the database ID to the returned metadata if needed
+                    fileMetadata.dbId = this.lastID;
+                    resolve();
+                }
+            });
+        });
+        // --- End Database Insertion ---
+
+        await appendToAudioList(fileMetadata.originalName, `${fileMetadata.publicPath}`, fileMetadata);
 
         return fileMetadata;
 
     } finally {
+        // Close the database connection if it was opened
+        if (db) {
+            db.close((err) => {
+                if (err) {
+                    logger.error('Error closing database connection', err);
+                } else {
+                    logger.debug('Database connection closed.');
+                }
+            });
+        }
+
+        // Clean up the temporary file
         if (tempFilePath && existsSync(tempFilePath)) {
             try {
                 await fs.unlink(tempFilePath);
@@ -299,13 +368,31 @@ async function storeMetadata(fileId, metadata) {
 }
 
 async function appendToAudioList(originalName, publicPath, metadata) {
+    // Log the received metadata object for debugging
+    logger.debug('appendToAudioList received metadata:', metadata ? 'Object received' : metadata); // Log if object or null/undefined
+
+    if (!metadata) {
+        logger.error('appendToAudioList received undefined/null metadata for file:', originalName);
+        // Optionally, still try to append basic info if possible
+        const basicEntry = `${originalName || 'Unknown Filename'} | ${publicPath || 'Unknown Path'}\n`;
+        try {
+            const listFilePathOnError = path.join(process.cwd(), 'public', 'audio_files.txt');
+            await fs.appendFile(listFilePathOnError, basicEntry, 'utf8');
+        } catch (appendError) {
+            logger.error('Failed to append basic info to audio list after metadata error', appendError);
+        }
+        return; // Exit the function early
+    }
+
     const listFilePath = path.join(process.cwd(), 'public', 'audio_files.txt');
 
-    // Extract artist and title from metadata.  Handle cases where they might be missing.
-    const artist = metadata?.common?.artist || 'Unknown Artist';
-    const title = metadata?.common?.title || originalName.replace(/\.[^/.]+$/, ""); // Use filename if no title, remove extension
+    // Extract artist and title safely, providing fallbacks
+    const artist = metadata.common?.artist || 'Unknown Artist';
+    // Ensure originalName is a string before calling replace
+    const fallbackTitleBase = typeof originalName === 'string' ? originalName.replace(/\.[^/.]+$/, "") : 'Unknown Title';
+    const title = metadata.common?.title || fallbackTitleBase;
 
-    const entry = `${artist} - ${title} - ${originalName} | ${publicPath}\n`;
+    const entry = `${artist} - ${title} - ${originalName || 'Unknown Filename'} | ${publicPath || 'Unknown Path'}\n`;
     try {
         await fs.appendFile(listFilePath, entry, 'utf8');
     } catch (error) {
