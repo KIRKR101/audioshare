@@ -130,6 +130,12 @@ const Navbar = () => {
                   Upload
                 </a>
                 <a
+                  href="/faq"
+                  className="text-black dark:text-gray-200 dark:hover:text-white px-3 py-2 rounded-md text-sm font-medium focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                >
+                  FAQ
+                </a>
+                <a
                   href="/audio_files.txt"
                   className="text-black dark:text-gray-200 dark:hover:text-white px-3 py-2 rounded-md text-sm font-medium focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 >
@@ -294,6 +300,13 @@ const Navbar = () => {
             className="block text-black dark:text-gray-200 hover:bg-neutral-200 dark:hover:bg-neutral-800 dark:hover:text-white px-3 py-2 rounded-md text-base font-medium focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
             Upload
+          </a>
+          <a
+            href="/faq"
+            onClick={handleMobileLinkClick}
+            className="block text-black dark:text-gray-200 hover:bg-neutral-200 dark:hover:bg-neutral-800 dark:hover:text-white px-3 py-2 rounded-md text-base font-medium focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            FAQ
           </a>
           <a
             href="/audio_files.txt"

@@ -59,9 +59,18 @@ export default function FileUpload() {
           setUploadSuccess(true);
           toast.success("Upload successful!");
         } else {
-          toast.error("Upload failed. Try again.");
           setUploadSuccess(false);
-          console.error("Upload failed", xhr.status, xhr.statusText);
+          let errorMessage = "Upload failed. Try again.";
+          try {
+            const errorData = JSON.parse(xhr.response);
+            if (errorData && errorData.error) {
+              errorMessage = errorData.error;
+            }
+          } catch (e) {
+            console.error("Failed to parse error response:", e);
+          }
+          toast.error(errorMessage);
+          console.error("Upload failed", xhr.status, xhr.statusText, errorMessage);
         }
       };
 
@@ -171,6 +180,9 @@ export default function FileUpload() {
               </p>
               <p className="text-xs dark:text-neutral-200 mt-1">
                 Supported formats: MP3, WAV, FLAC
+              </p>
+              <p className="text-xs dark:text-neutral-200 mt-1">
+                Max size: 300MB
               </p>
             </div>
           </div>

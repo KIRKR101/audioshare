@@ -6,13 +6,13 @@ import path from 'path';
 import crypto from 'crypto';
 import { pipeline } from 'stream/promises';
 import { createReadStream, createWriteStream } from 'fs';
-import sqlite3 from 'sqlite3'; // Import sqlite3
+import sqlite3 from 'sqlite3';
 
 // Disable default body parser
 export const config = {
     api: {
         bodyParser: false,
-        responseLimit: '2mb',
+        responseLimit: '25mb',
         externalResolver: true,
     },
 };
@@ -123,142 +123,198 @@ export default async function handler(req, res) {
     }
 }
 
-async function processAudioFile(req, res) { // Receive req and res
-    let metadata;
-    const tempFilePath = req.file.path;
-    const fileExt = path.extname(req.file.originalname).toLowerCase();
-    const dbPath = path.resolve(process.cwd(), 'lib/database.db'); // Define DB path relative to cwd
-    let db; // DB connection variable
+async function processAudioFile(req, res) {
+  const MAX_RETRIES = 5;
+  let metadata;
+  const tempFilePath = req.file.path;
+  const originalName = req.file.originalname;
+  const fileExt = path.extname(originalName).toLowerCase();
+  const dbPath = path.resolve(process.cwd(), "lib/database.db");
+  let db;
 
-    try {
-        // Connect to the database
-        db = new sqlite3.Database(dbPath, sqlite3.OPEN_READWRITE, (err) => {
-            if (err) {
-                logger.error('Error connecting to database in processAudioFile', err);
-                // Propagate the error to be caught by the outer catch block
-                throw new Error(`Database connection failed: ${err.message}`);
-            }
-            logger.debug('Connected to SQLite database for processing.');
-        });
+  try {
+    db = new sqlite3.Database(dbPath, sqlite3.OPEN_READWRITE, (err) => {
+      if (err) {
+        logger.error("Error connecting to database in processAudioFile", err);
+        throw new Error(`Database connection failed: ${err.message}`);
+      }
+      logger.debug("Connected to SQLite database for processing.");
+    });
 
-        if (['.flac', '.ogg', '.wav', '.aiff', '.m4a'].includes(fileExt)) {
-            logger.debug(`Using parseFile for ${fileExt} file`);
-            metadata = await parseFile(tempFilePath, {
-                skipCovers: false,
-                skipPostHeaders: false,
-                duration: true
-            });
-        } else {
-            logger.debug(`Using parseBuffer for ${fileExt} file`);
-            const fileBuffer = await fs.readFile(tempFilePath);
-            metadata = await parseBuffer(fileBuffer, {
-                mimeType: req.file.mimetype,
-                skipCovers: false,
-                skipPostHeaders: false,
-                duration: true
-            });
-        }
+    // --- Metadata Parsing ---
+    if ([".flac", ".ogg", ".wav", ".aiff", ".m4a"].includes(fileExt)) {
+      logger.debug(`Using parseFile for ${fileExt} file`);
+      metadata = await parseFile(tempFilePath, {
+        skipCovers: false,
+        skipPostHeaders: false,
+        duration: true,
+      });
+    } else {
+      logger.debug(`Using parseBuffer for ${fileExt} file`);
+      const fileBuffer = await fs.readFile(tempFilePath);
+      metadata = await parseBuffer(fileBuffer, {
+        mimeType: req.file.mimetype,
+        skipCovers: false,
+        skipPostHeaders: false,
+        duration: true,
+      });
+    }
 
-        const fileId = crypto.randomBytes(16).toString('hex');
-        const albumArtPath = await processAlbumArt(metadata, fileId);
-        const storedFilePath = await storeAudioFile(tempFilePath, fileId, req.file.originalname);
-        const commonMetadataWithoutPicture = { ...metadata.common }; // Create a shallow copy
-        delete commonMetadataWithoutPicture.picture; // Remove the picture property from the copy
+    const fileId = crypto.randomBytes(16).toString("hex");
+    const albumArtPath = await processAlbumArt(metadata, fileId);
+    const initialPublicPath = await storeAudioFile(
+      tempFilePath,
+      fileId,
+      originalName
+    );
+    const commonMetadataWithoutPicture = { ...metadata.common };
+    delete commonMetadataWithoutPicture.picture;
+    const nativeMetadataWithoutImage = removeImageDataFromNative(
+      metadata.native,
+      metadata.format.codec
+    );
 
-        // Remove image data from native metadata using format-specific logic
-        const nativeMetadataWithoutImage = removeImageDataFromNative(metadata.native, metadata.format.codec);
+    let fileMetadata = {
+      fileId,
+      originalName: originalName,
+      fileExtension: fileExt.slice(1),
+      mimetype: req.file.mimetype,
+      size: req.file.size,
+      albumArt: albumArtPath,
+      publicPath: initialPublicPath,
+      format: metadata.format,
+      common: commonMetadataWithoutPicture,
+      native: nativeMetadataWithoutImage,
+      uploadDate: new Date().toISOString(),
+    };
 
-        const fileMetadata = {
-            fileId,
-            originalName: req.file.originalname,
-            fileExtension: fileExt.slice(1),
-            mimetype: req.file.mimetype,
-            size: req.file.size,
-            albumArt: albumArtPath,
-            publicPath: storedFilePath,
-            format: metadata.format,
-            common: commonMetadataWithoutPicture,
-            native: nativeMetadataWithoutImage,
-            uploadDate: new Date().toISOString(),
-            // Note: fileId is not stored in the DB as it's the primary key
-        };
+    // --- DB Insertion ---
 
-        // --- Construct file URL ---
-        const fileUrl = `${fileMetadata.publicPath.replace(fileExt, '')}`;
-
-        // Store metadata in JSON file
-        await storeMetadata(fileId, fileMetadata);
-
-        // --- Insert metadata into the database ---
-        const sql = `
+    const sql = `
             INSERT INTO songs (
                 filename, filepath, size, artist, title, album, year, trackNumber,
                 genre, duration, bitrate, sampleRate, format, albumArtist, composer, diskNumber, extension, link
             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `;
-        // Ensure values are null if undefined, especially for numeric types
+
+    let success = false;
+    for (let i = 0; i <= MAX_RETRIES; i++) {
+      try {
+        const fileUrl = `${fileMetadata.publicPath.replace(fileExt, "")}`;
         const params = [
-            fileMetadata.originalName, // filename
-            fileMetadata.publicPath,   // filepath (relative public path)
-            fileMetadata.size ?? null,         // size
-            metadata.common?.artist ?? null,   // artist
-            metadata.common?.title ?? null,    // title
-            metadata.common?.album ?? null,    // album
-            metadata.common?.year ?? null,     // year
-            metadata.common?.track?.no ?? null,// trackNumber
-            metadata.common?.genre?.join(', ') ?? null, // genre (join if array)
-            metadata.format?.duration ?? null, // duration
-            metadata.format?.bitrate ?? null,  // bitrate
-            metadata.format?.sampleRate ?? null,// sampleRate
-            metadata.format?.codec ?? null,    // format (codec)
-            metadata.common?.albumartist ?? null, // albumArtist
-            metadata.common?.composer?.join(', ') ?? null, // composer (join if array)
-            metadata.common?.disk?.no ?? null,  // diskNumber
-            fileMetadata.fileExtension,
-            fileUrl
+          fileMetadata.originalName,
+          fileMetadata.publicPath,
+          fileMetadata.size ?? null,
+          metadata.common?.artist ?? null,
+          metadata.common?.title ?? null,
+          metadata.common?.album ?? null,
+          metadata.common?.year ?? null,
+          metadata.common?.track?.no ?? null,
+          metadata.common?.genre?.join(", ") ?? null,
+          metadata.format?.duration ?? null,
+          metadata.format?.bitrate ?? null,
+          metadata.format?.sampleRate ?? null,
+          metadata.format?.codec ?? null,
+          metadata.common?.albumartist ?? null,
+          metadata.common?.composer?.join(", ") ?? null,
+          metadata.common?.disk?.no ?? null,
+          fileMetadata.fileExtension,
+          fileUrl,
         ];
 
-        // Use a promise to handle the async db operation
         await new Promise((resolve, reject) => {
-            db.run(sql, params, function(err) { // Use function() to access this.lastID
-                if (err) {
-                    logger.error('Error inserting data into database', err);
-                    reject(new Error(`Database insertion failed: ${err.message}`));
-                } else {
-                    logger.info(`Song inserted into DB with ID: ${this.lastID}`);
-                    // Add the database ID to the returned metadata if needed
-                    fileMetadata.dbId = this.lastID;
-                    resolve();
-                }
-            });
-        });
-        // --- End Database Insertion ---
-
-        await appendToAudioList(fileMetadata.originalName, `${fileMetadata.publicPath}`, fileMetadata);
-
-        return fileMetadata;
-
-    } finally {
-        // Close the database connection if it was opened
-        if (db) {
-            db.close((err) => {
-                if (err) {
-                    logger.error('Error closing database connection', err);
-                } else {
-                    logger.debug('Database connection closed.');
-                }
-            });
-        }
-
-        // Clean up the temporary file
-        if (tempFilePath && existsSync(tempFilePath)) {
-            try {
-                await fs.unlink(tempFilePath);
-            } catch (err) {
-                logger.error('Failed to clean up temp file', err);
+          db.run(sql, params, function (err) {
+            if (err) {
+              reject(err);
+            } else {
+              fileMetadata.dbId = this.lastID;
+              resolve();
             }
+          });
+        });
+
+        logger.info(`Song inserted into DB with ID: ${fileMetadata.dbId}`);
+        success = true;
+        break;
+      } catch (dbErr) {
+        if (dbErr.message.includes("SQLITE_CONSTRAINT") && i < MAX_RETRIES) {
+          logger.warn(
+            `Duplicate filename detected for ${fileMetadata.originalName}. Retrying with modified name.`
+          );
+
+          const newTimestamp = Date.now();
+          const nameWithoutExt = path.basename(
+            fileMetadata.originalName,
+            fileExt
+          );
+
+          const oldFilesystemPath = path.join(
+            process.cwd(),
+            "public",
+            fileMetadata.publicPath
+          );
+          const newOriginalName = `${nameWithoutExt}_${newTimestamp}${fileExt}`;
+          const newPublicPath = `/audio/${fileId}_${newTimestamp}${fileExt}`;
+          const newFilesystemPath = path.join(
+            process.cwd(),
+            "public",
+            newPublicPath
+          );
+
+          await fs.rename(oldFilesystemPath, newFilesystemPath);
+          logger.debug(
+            `Renamed file from ${oldFilesystemPath} to ${newFilesystemPath}`
+          );
+
+          fileMetadata.originalName = newOriginalName;
+          fileMetadata.publicPath = newPublicPath;
+
+        } else {
+          logger.error(
+            "Error inserting data into database after retries or for a non-constraint reason.",
+            dbErr
+          );
+          throw new Error(`Database insertion failed: ${dbErr.message}`);
         }
+      }
     }
+
+    if (!success) {
+      throw new Error(
+        "Failed to process file after multiple retries due to database constraints."
+      );
+    }
+
+
+    await appendToAudioList(
+      fileMetadata.originalName,
+      fileMetadata.publicPath,
+      fileMetadata
+    );
+
+    // Store the metadata in a JSON file
+    await storeMetadata(fileMetadata.fileId, fileMetadata);
+
+    return fileMetadata;
+  } finally {
+    if (db) {
+      db.close((err) => {
+        if (err) {
+          logger.error("Error closing database connection", err);
+        } else {
+          logger.debug("Database connection closed.");
+        }
+      });
+    }
+
+    if (tempFilePath && existsSync(tempFilePath)) {
+      try {
+        await fs.unlink(tempFilePath);
+      } catch (err) {
+        logger.error("Failed to clean up temp file", err);
+      }
+    }
+  }
 }
 
 function removeImageDataFromNative(nativeMetadata, codec) {
@@ -294,7 +350,7 @@ function removeImageDataFromNative(nativeMetadata, codec) {
                 } else if (format === 'iTunes' && formatSpecificTagsToRemove.includes(tag.id)) {
                     return false; // Exclude specific iTunes atoms by ID
                 }
-                // For formats without specific logic, fallback to heuristics (optional, can be removed if only format-specific removal is desired)
+                // For formats without specific logic
                 if (tag.id) {
                     const tagIdLower = tag.id.toLowerCase();
                     if (tagIdLower.includes('picture') || tagIdLower.includes('coverart') || tagIdLower.includes('cover')) {
@@ -373,7 +429,6 @@ async function appendToAudioList(originalName, publicPath, metadata) {
 
     if (!metadata) {
         logger.error('appendToAudioList received undefined/null metadata for file:', originalName);
-        // Optionally, still try to append basic info if possible
         const basicEntry = `${originalName || 'Unknown Filename'} | ${publicPath || 'Unknown Path'}\n`;
         try {
             const listFilePathOnError = path.join(process.cwd(), 'public', 'audio_files.txt');
@@ -381,7 +436,7 @@ async function appendToAudioList(originalName, publicPath, metadata) {
         } catch (appendError) {
             logger.error('Failed to append basic info to audio list after metadata error', appendError);
         }
-        return; // Exit the function early
+        return;
     }
 
     const listFilePath = path.join(process.cwd(), 'public', 'audio_files.txt');

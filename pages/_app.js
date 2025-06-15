@@ -1,6 +1,7 @@
 import "@/styles/globals.css";
 import { ThemeProvider } from "../components/ThemeContext";
 import Head from "next/head";
+import { Toaster } from "sonner";
 
 export default function App({ Component, pageProps }) {
 
@@ -14,6 +15,7 @@ export default function App({ Component, pageProps }) {
         ></meta>
       </Head>
       <Component {...pageProps} />
+      <Toaster />
     </ThemeProvider>
   );
 }

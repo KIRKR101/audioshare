@@ -1,9 +1,8 @@
 import fs from "fs";
 import path from "path";
-import mime from "mime-types"; // Using a library for robust MIME type detection
+import mime from "mime-types";
 
 export default async function handler(req, res) {
-  // Extract the full filename (e.g., 'some-unique-id.jpg') from the query
   const { filename } = req.query;
 
   if (!filename || typeof filename !== "string") {
@@ -19,21 +18,16 @@ export default async function handler(req, res) {
   const imageFilePath = path.join(imageFileDir, filename);
 
   try {
-    // 1. Check if the file exists and get its stats
     const stat = await fs.promises.stat(imageFilePath);
 
-    // 2. Determine the Content-Type based on the file extension
-    // Using 'mime-types' library is more reliable than manual mapping
     const contentType =
       mime.lookup(imageFilePath) || "application/octet-stream"; // Default if type unknown
 
-    // 3. Set headers
+    // Set headers
     res.setHeader("Content-Type", contentType);
     res.setHeader("Content-Length", stat.size);
-    // Optional: Add cache control headers if desired
-    // res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
 
-    // 4. Create a read stream and pipe it to the response
+    // Create a read stream and pipe it to the response
     const readStream = fs.createReadStream(imageFilePath);
 
     // Pipe the stream to the response object
@@ -62,7 +56,6 @@ export default async function handler(req, res) {
   }
 }
 
-// Keep externalResolver as we are manually handling the response pipe
 export const config = {
   api: {
     externalResolver: true,
