@@ -391,11 +391,11 @@ export default function AudioPage({ fileMetadata, fileId, fileName }) {
   };
 
   return (
-    <div className="bg-neutral-100 dark:bg-neutral-950 h-dvh">
+    <div className="bg-neutral-100 dark:bg-neutral-950 h-dvh flex flex-col">
       <Navbar />
       <main
         role="main"
-        className="container mx-auto pt-16 md:pt-32 px-4 sm:px-6 lg:px-8"
+        className="container mx-auto flex flex-grow items-center px-4 sm:px-6 lg:px-8"
       >
         <Card
           role="region"
