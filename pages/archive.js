@@ -101,7 +101,7 @@ export default function DbArchivePage({
   return (
     <div className="min-h-screen bg-neutral-100 dark:bg-neutral-950 text-black dark:text-white">
       <Navbar />
-      <main className="container mx-auto px-4 py-8">
+      <main className="container mx-auto px-4 sm:px-6 lg:px-8 pt-16 pb-8">
         <h1 className="text-3xl font-bold mb-4 text-gray-900 dark:text-gray-100">
           Archive
         </h1>
@@ -150,7 +150,7 @@ export default function DbArchivePage({
           </div>
         )}
 
-        <div className="overflow-x-auto rounded-lg border border-gray-200 dark:border-neutral-800 overflow-x-auto rounded-lg border border-gray-200 dark:border-neutral-800 custom-scrollbar">
+        <div className="overflow-x-auto rounded-lg border border-gray-200 dark:border-neutral-800 custom-scrollbar">
           <Table>
             <TableHeader className="bg-gray-50 dark:bg-neutral-900">
               <TableRow>
