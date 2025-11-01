@@ -48,6 +48,12 @@ export default class MyDocument extends Document {
       // Apply the theme class directly to <html> on the server based on the cookie
       <Html lang="en" className={initialTheme === "dark" ? "dark" : ""}>
         <Head>
+          <link rel="preconnect" href="https://fonts.googleapis.com" />
+          <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="true" />
+          <link
+            href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&display=swap"
+            rel="stylesheet"
+          />
           <script
             dangerouslySetInnerHTML={{
               __html: `
