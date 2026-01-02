@@ -388,7 +388,7 @@ async function processAlbumArt(metadata, fileId) {
                 case 'image/gif':
                     extension = '.gif'; break;
                 case 'image/webp':
-                    extenstion = '.webp'; break;
+                    extension = '.webp'; break;
             }
         }
 
