@@ -1,4 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
+import Link from "next/link";
+import { useRouter } from "next/router";
 import { Moon, Sun, User, Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -10,23 +12,24 @@ import {
 import Cookies from "js-cookie";
 
 const Navbar = () => {
+  const router = useRouter();
   const [theme, setTheme] = useState("light");
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const mobileMenuRef = useRef(null);
   const mobileMenuTriggerRef = useRef(null);
 
-  // --- Theme Handling Effect ---
+  // --- Theme Handling ---
+  const applyTheme = (t) => {
+    setTheme(t);
+    if (t === "dark") {
+      document.documentElement.classList.add("dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+    }
+  };
+
   useEffect(() => {
     const savedTheme = Cookies.get("theme");
-    const applyTheme = (t) => {
-      setTheme(t);
-      if (t === "dark") {
-        document.documentElement.classList.add("dark");
-      } else {
-        document.documentElement.classList.remove("dark");
-      }
-    };
-
     if (savedTheme) {
       applyTheme(savedTheme);
     } else {
@@ -84,13 +87,8 @@ const Navbar = () => {
   // --- Toggle Functions ---
   const toggleTheme = () => {
     const newTheme = theme === "light" ? "dark" : "light";
-    setTheme(newTheme);
+    applyTheme(newTheme);
     Cookies.set("theme", newTheme, { expires: 365 });
-    if (newTheme === "dark") {
-      document.documentElement.classList.add("dark");
-    } else {
-      document.documentElement.classList.remove("dark");
-    }
   };
 
   const toggleMobileMenu = () => {
@@ -101,6 +99,9 @@ const Navbar = () => {
   const handleMobileLinkClick = () => {
     setIsMobileMenuOpen(false);
   };
+
+  // Check if link is active
+  const isActive = (path) => router.pathname === path;
 
   return (
     <>
@@ -113,40 +114,56 @@ const Navbar = () => {
           <div className="flex justify-between items-center h-full">
             {/* Left section: Logo and Desktop Links */}
             <div className="flex items-center gap-6">
-              <a
+              <Link
                 href="/"
                 className="flex items-center space-x-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-sm"
               >
-                <span className="text-black dark:text-gray-200 dark:hover:text-white text-xl font-bold">
+                <span className="text-black dark:text-gray-200 text-xl font-bold relative before:absolute before:bottom-0 before:left-0 before:w-full before:h-0.5 before:bg-current before:scale-x-0 before:transform before:transition-transform before:duration-300 before:ease-in-out before:origin-left hover:before:scale-x-100">
                   AudioShare
                 </span>
-              </a>
+              </Link>
               <div className="hidden md:flex items-center gap-4">
                 {/* Desktop Links */}
-                <a
+                <Link
                   href="/"
-                  className="text-black dark:text-gray-200 dark:hover:text-white px-3 py-2 rounded-md text-sm font-medium focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  className={`px-3 py-2 rounded-md text-sm font-medium focus:outline-none focus-visible:ring-2 focus-visible:ring-ring transition-colors ${
+                    isActive("/")
+                      ? "bg-neutral-200 dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100"
+                      : "text-black dark:text-gray-200 hover:bg-neutral-200 dark:hover:bg-neutral-800 dark:hover:text-white"
+                  }`}
                 >
                   Upload
-                </a>
-                <a
+                </Link>
+                <Link
                   href="/faq"
-                  className="text-black dark:text-gray-200 dark:hover:text-white px-3 py-2 rounded-md text-sm font-medium focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  className={`px-3 py-2 rounded-md text-sm font-medium focus:outline-none focus-visible:ring-2 focus-visible:ring-ring transition-colors ${
+                    isActive("/faq")
+                      ? "bg-neutral-200 dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100"
+                      : "text-black dark:text-gray-200 hover:bg-neutral-200 dark:hover:bg-neutral-800 dark:hover:text-white"
+                  }`}
                 >
                   FAQ
-                </a>
-                <a
-                  href="/audio_files.txt"
-                  className="text-black dark:text-gray-200 dark:hover:text-white px-3 py-2 rounded-md text-sm font-medium focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                >
-                  Index
-                </a>
-                <a
+                </Link>
+                <Link
                   href="/archive"
-                  className="text-black dark:text-gray-200 dark:hover:text-white px-3 py-2 rounded-md text-sm font-medium focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  className={`px-3 py-2 rounded-md text-sm font-medium focus:outline-none focus-visible:ring-2 focus-visible:ring-ring transition-colors ${
+                    isActive("/archive")
+                      ? "bg-neutral-200 dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100"
+                      : "text-black dark:text-gray-200 hover:bg-neutral-200 dark:hover:bg-neutral-800 dark:hover:text-white"
+                  }`}
                 >
                   Archive
-                </a>
+                </Link>
+                <Link
+                  href="/audio_files.txt"
+                  className={`px-3 py-2 rounded-md text-sm font-medium focus:outline-none focus-visible:ring-2 focus-visible:ring-ring transition-colors ${
+                    isActive("/audio_files.txt")
+                      ? "bg-neutral-200 dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100"
+                      : "text-black dark:text-gray-200 hover:bg-neutral-200 dark:hover:bg-neutral-800 dark:hover:text-white"
+                  }`}
+                >
+                  Index
+                </Link>
               </div>
             </div>
 
@@ -227,20 +244,20 @@ const Navbar = () => {
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
                   <DropdownMenuItem>
-                    <a
+                    <Link
                       href="/login"
                       className="w-full block focus:outline-none focus-visible:ring-1 focus-visible:ring-ring rounded-sm"
                     >
                       Login
-                    </a>
+                    </Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem>
-                    <a
+                    <Link
                       href="/register"
                       className="w-full block focus:outline-none focus-visible:ring-1 focus-visible:ring-ring rounded-sm"
                     >
                       Register
-                    </a>
+                    </Link>
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -294,34 +311,50 @@ const Navbar = () => {
         {/* Menu Links */}
         <div className="flex-grow p-4 space-y-2">
           {" "}
-          <a
+          <Link
             href="/"
             onClick={handleMobileLinkClick}
-            className="block text-black dark:text-gray-200 hover:bg-neutral-200 dark:hover:bg-neutral-800 dark:hover:text-white px-3 py-2 rounded-md text-base font-medium focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            className={`block px-3 py-2 rounded-md text-base font-medium focus:outline-none focus-visible:ring-2 focus-visible:ring-ring transition-colors ${
+              isActive("/")
+                ? "bg-neutral-200 dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100"
+                : "text-black dark:text-gray-200 hover:bg-neutral-200 dark:hover:bg-neutral-800 dark:hover:text-white"
+            }`}
           >
             Upload
-          </a>
-          <a
+          </Link>
+          <Link
             href="/faq"
             onClick={handleMobileLinkClick}
-            className="block text-black dark:text-gray-200 hover:bg-neutral-200 dark:hover:bg-neutral-800 dark:hover:text-white px-3 py-2 rounded-md text-base font-medium focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            className={`block px-3 py-2 rounded-md text-base font-medium focus:outline-none focus-visible:ring-2 focus-visible:ring-ring transition-colors ${
+              isActive("/faq")
+                ? "bg-neutral-200 dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100"
+                : "text-black dark:text-gray-200 hover:bg-neutral-200 dark:hover:bg-neutral-800 dark:hover:text-white"
+            }`}
           >
             FAQ
-          </a>
-          <a
-            href="/audio_files.txt"
-            onClick={handleMobileLinkClick}
-            className="block text-black dark:text-gray-200 hover:bg-neutral-200 dark:hover:bg-neutral-800 dark:hover:text-white px-3 py-2 rounded-md text-base font-medium focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-          >
-            Index
-          </a>
-          <a
+          </Link>
+          <Link
             href="/archive"
             onClick={handleMobileLinkClick}
-            className="block text-black dark:text-gray-200 hover:bg-neutral-200 dark:hover:bg-neutral-800 dark:hover:text-white px-3 py-2 rounded-md text-base font-medium focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            className={`block px-3 py-2 rounded-md text-base font-medium focus:outline-none focus-visible:ring-2 focus-visible:ring-ring transition-colors ${
+              isActive("/archive")
+                ? "bg-neutral-200 dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100"
+                : "text-black dark:text-gray-200 hover:bg-neutral-200 dark:hover:bg-neutral-800 dark:hover:text-white"
+            }`}
           >
             Archive
-          </a>
+          </Link>
+          <Link
+            href="/audio_files.txt"
+            onClick={handleMobileLinkClick}
+            className={`block px-3 py-2 rounded-md text-base font-medium focus:outline-none focus-visible:ring-2 focus-visible:ring-ring transition-colors ${
+              isActive("/audio_files.txt")
+                ? "bg-neutral-200 dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100"
+                : "text-black dark:text-gray-200 hover:bg-neutral-200 dark:hover:bg-neutral-800 dark:hover:text-white"
+            }`}
+          >
+            Index
+          </Link>
         </div>
       </div>
     </>

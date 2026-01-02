@@ -148,7 +148,7 @@ export default function FileUpload() {
           </div>
         ) : (
           <div
-            className="border-2 border-dashed rounded-lg p-8 mb-4 cursor-pointer flex flex-col items-center justify-center"
+            className="border-2 border-dashed rounded-lg p-8 mb-4 cursor-pointer flex flex-col items-center justify-center hover:border-neutral-500 dark:hover:border-neutral-700 hover:bg-gray-50 dark:hover:bg-neutral-900/50 hover:shadow-lg transition-all duration-200"
             onClick={() => fileInputRef.current?.click()}
           >
             <input
@@ -178,7 +178,7 @@ export default function FileUpload() {
               <p className="text-sm font-medium dark:text-white">
                 Click to upload or drag and drop
               </p>
-              <p className="text-xs dark:text-neutral-200 mt-1">
+              <p className="text-xs dark:text-neutral-200 mt-1" title="Supported formats: MP3, WAV, FLAC, OGG, AAC, M4A, WMA, OPUS">
                 Supported formats: MP3, WAV, FLAC
               </p>
               <p className="text-xs dark:text-neutral-200 mt-1">
