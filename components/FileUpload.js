@@ -217,7 +217,7 @@ export default function FileUpload() {
         <Card className="w-full max-w-2xl mx-auto shadow-lg">
             <CardContent className="p-6 sm:p-8">
                 <div className="mb-8">
-                    <h2 className="text-2xl sm:text-3xl font-bold dark:text-white mb-2">
+                    <h2 className="text-xl sm:text-2xl font-bold tracking-tight dark:text-neutral-100 mb-2">
                         Upload Audio File
                     </h2>
                 </div>
@@ -236,7 +236,7 @@ export default function FileUpload() {
                                     />
                                 ) : (
                                     <div className="w-20 h-20 bg-gradient-to-br from-neutral-400 to-neutral-600 dark:from-neutral-600 dark:to-neutral-800 rounded flex items-center justify-center flex-shrink-0 shadow-md">
-                                        <Music className="w-10 h-10 text-white" />
+                                        <Music className="w-10 h-10 text-neutral-100" />
                                     </div>
                                 )}
 
@@ -249,7 +249,7 @@ export default function FileUpload() {
                                         </div>
                                     ) : (
                                         <>
-                                            <p className="font-semibold text-lg dark:text-white truncate mb-1">
+                                            <p className="font-semibold text-lg dark:text-neutral-100 truncate">
                                                 {metadata?.title}
                                             </p>
                                             <p className="text-lg text-neutral-600 dark:text-neutral-400 truncate mb-1">
@@ -298,7 +298,7 @@ export default function FileUpload() {
                             >
                                 {uploading ? (
                                     <>
-                                        <div className="w-4 h-4 border border-white border-t-transparent rounded-full animate-spin mr-2" />
+                                        <div className="w-4 h-4 border border-neutral-100 border-t-transparent rounded-full animate-spin mr-2" />
                                         Uploading... {progress}%
                                     </>
                                 ) : (
@@ -342,7 +342,7 @@ export default function FileUpload() {
                                     }`}
                                 />
                             </div>
-                            <p className="text-lg font-semibold dark:text-white mb-2">
+                            <p className="text-lg font-semibold dark:text-neutral-100 mb-2">
                                 Click to upload or drag and drop
                             </p>
                             <p className="text-base text-neutral-600 dark:text-neutral-400 mb-1">
@@ -368,7 +368,7 @@ export default function FileUpload() {
                                 Shareable link:
                             </p>
                             <div className="flex items-center gap-2">
-                                <div className="flex-1 min-w-0 p-3 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded-lg">
+                                <div className="flex-1 min-w-0 p-3 bg-neutral-100 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded-lg">
                                     <a
                                         href={shareableLink}
                                         className="text-base text-blue-600 dark:text-blue-400 hover:underline break-all flex items-center gap-1"
@@ -383,7 +383,7 @@ export default function FileUpload() {
                                     variant="outline"
                                     size="icon"
                                     onClick={handleCopyLink}
-                                    className="dark:text-white h-12 w-12 flex-shrink-0"
+                                    className="dark:text-neutral-100 h-12 w-12 flex-shrink-0"
                                     disabled={isCopying}
                                 >
                                     {isCopying ? (

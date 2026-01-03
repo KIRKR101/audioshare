@@ -1,14 +1,8 @@
 import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/router";
-import { Moon, Sun, User, Menu, X } from "lucide-react";
+import { Moon, Sun, Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import Cookies from "js-cookie";
 
 const Navbar = () => {
@@ -167,9 +161,9 @@ const Navbar = () => {
               </div>
             </div>
 
-            {/* Right section: Mobile Toggle, Theme, User */}
+            {/* Right section: Mobile Toggle, Theme */}
             <div className="flex items-center gap-3">
-              {/* Mobile Menu Button - md:hidden */}
+              {/* Mobile Menu Button */}
               <div className="md:hidden">
                 <Button
                   ref={mobileMenuTriggerRef}
@@ -225,42 +219,6 @@ const Navbar = () => {
                   />
                 )}
               </Button>
-
-              {/* User Menu Dropdown */}
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-9 w-9"
-                    aria-label="Open user menu"
-                    title="User menu"
-                  >
-                    <User
-                      aria-hidden="true"
-                      className="h-4 w-4 text-black dark:text-gray-200 dark:hover:text-white"
-                    />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem>
-                    <Link
-                      href="/login"
-                      className="w-full block focus:outline-none focus-visible:ring-1 focus-visible:ring-ring rounded-sm"
-                    >
-                      Login
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem>
-                    <Link
-                      href="/register"
-                      className="w-full block focus:outline-none focus-visible:ring-1 focus-visible:ring-ring rounded-sm"
-                    >
-                      Register
-                    </Link>
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
             </div>
           </div>
         </div>
@@ -280,7 +238,6 @@ const Navbar = () => {
         ref={mobileMenuRef}
         id="mobile-menu-overlay"
         className={`fixed top-0 bottom-0 right-0 z-40 w-64 bg-neutral-100 dark:bg-neutral-950 shadow-xl md:hidden transition-transform duration-300 ease-in-out transform flex flex-col ${
-          // Added flex flex-col
           isMobileMenuOpen ? "translate-x-0" : "translate-x-full" // Slide in/out
         }`}
         role="dialog"

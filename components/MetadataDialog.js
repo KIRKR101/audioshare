@@ -89,9 +89,9 @@ export default function MetadataDialog({ isOpen, onClose, fileMetadata, fileName
                         <div className="text-lg font-medium text-gray-900 dark:text-white">
                             Metadata
                         </div>
-                        <Button variant="secondary" onClick={onClose}>
-                            Close
-                            <X className="h-4 w-4" />
+                        <Button variant="ghost" onClick={onClose} size="icon" className="h-8 w-8 rounded-full hover:bg-gray-100 dark:hover:bg-neutral-800">
+                            <X className="h-5 w-5 dark:text-white" />
+                            <span className="sr-only">Close</span>
                         </Button>
                     </div>
                     <ScrollArea className="h-[70vh] w-full rounded-md px-4">
