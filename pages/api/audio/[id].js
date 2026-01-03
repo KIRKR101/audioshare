@@ -25,25 +25,43 @@ export default async function handler(req, res) {
     if (range) {
       const parts = range.replace(/bytes=/, "").split("-");
       const start = parseInt(parts[0], 10);
-      const end = parts[1] ? parseInt(parts[1], 10) : fileSize - 1;
-      const chunkSize = (end - start) + 1;
+      
+      // Define a maximum chunk size (1MB)
+      const MAX_CHUNK_SIZE = 1024 * 1024; 
+      
+      let end = parts[1] ? parseInt(parts[1], 10) : start + MAX_CHUNK_SIZE;
+      
+      // Ensure end doesn't exceed file size
+      if (end >= fileSize) {
+        end = fileSize - 1;
+      }
+      
+      // Ensure start doesn't exceed end
+      if (start > end) {
+        res.status(416).setHeader('Content-Range', `bytes */${fileSize}`);
+        return res.end();
+      }
 
+      const chunkSize = (end - start) + 1;
       const file = fs.createReadStream(audioFilePath, { start, end });
-      res.setHeader('Content-Range', `bytes ${start}-${end}/${fileSize}`);
-      res.setHeader('Accept-Ranges', 'bytes');
-      res.setHeader('Content-Length', chunkSize);
-      res.setHeader('Content-Type', metadata.mimetype); // Use mimetype from metadata
-      res.status(206); // Partial Content
+      
+      res.writeHead(206, {
+        'Content-Range': `bytes ${start}-${end}/${fileSize}`,
+        'Accept-Ranges': 'bytes',
+        'Content-Length': chunkSize,
+        'Content-Type': metadata.mimetype,
+      });
+
       file.pipe(res);
 
       file.on('error', (err) => {
         console.error("Stream error:", err);
-        res.status(416).setHeader('Content-Range', `bytes */${fileSize}`);
-        res.statusMessage = 'Range Not Satisfiable';
-        res.end();
+        if (!res.headersSent) {
+          res.status(500).end();
+        } else {
+          res.end();
+        }
       });
-
-
     } else {
       // No range requested, send the whole file
       const file = fs.createReadStream(audioFilePath);
@@ -65,5 +83,7 @@ export default async function handler(req, res) {
 export const config = {
   api: {
     externalResolver: true,
+    bodyParser: false,
+    responseLimit: false,
   },
 };

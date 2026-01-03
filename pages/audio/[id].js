@@ -366,7 +366,7 @@ export default function AudioPage({ fileMetadata, fileId, fileName }) {
             <audio
               ref={audioRef}
               src={audioSrc}
-              preload="metadata"
+              preload="none"
               className="hidden"
               onError={() => setError("Error loading audio.")}
               aria-hidden="true"

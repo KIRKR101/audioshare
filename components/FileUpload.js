@@ -371,12 +371,12 @@ export default function FileUpload() {
                                 <div className="flex-1 min-w-0 p-3 bg-neutral-100 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded-lg">
                                     <a
                                         href={shareableLink}
-                                        className="text-base text-blue-600 dark:text-blue-400 hover:underline break-all flex items-center gap-1"
+                                        className="text-base text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1"
                                         target="_blank"
                                         rel="noopener noreferrer"
                                     >
-                                        {shareableLink}
-                                        <ExternalLink className="w-3 h-3 flex-shrink-0 inline" />
+                                        <span className="truncate">{shareableLink}</span>
+                                        <ExternalLink className="w-3 h-3 flex-shrink-0" />
                                     </a>
                                 </div>
                                 <Button
